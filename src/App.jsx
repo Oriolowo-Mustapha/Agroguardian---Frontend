@@ -64,7 +64,7 @@ function App() {
             } 
           />
           <Route
-            path="/auth/google/callback"
+            path="/auth/google/:status"
             element={
               <PublicRoute>
                 <GoogleAuthCallbackPage />
