@@ -25,6 +25,14 @@ const CarbonCreditPage = () => {
   const [selectedCredit, setSelectedCredit] = React.useState(null);
   const queryClient = useQueryClient();
 
+  const formatCredits = (num) => {
+    const val = Number(num || 0);
+    // If it's a very small number, show more precision (up to 6 decimal places)
+    // otherwise show 4 decimal places for accuracy as requested by user.
+    if (val > 0 && val < 0.1) return val.toFixed(6);
+    return val.toFixed(4);
+  };
+
   const { data: credits, isLoading, error } = useQuery({
     queryKey: ['carbon-credits'],
     queryFn: async () => {
@@ -171,7 +179,7 @@ const CarbonCreditPage = () => {
               <div className="bg-gray-50 rounded-2xl p-4">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Credits</p>
                 <p className="mt-1 font-black text-gray-900 text-lg">
-                  {Number(selectedCredit.creditsEarned || 0).toFixed(2)} <span className="text-xs font-bold text-gray-400">MT</span>
+                  {formatCredits(selectedCredit.creditsEarned)} <span className="text-xs font-bold text-gray-400">MT</span>
                 </p>
               </div>
               <div className="bg-gray-50 rounded-2xl p-4">
@@ -314,7 +322,7 @@ const CarbonCreditPage = () => {
               <span className="text-[10px] font-black uppercase tracking-widest opacity-80 bg-white/10 px-2 py-1 rounded-full">Lifetime Total</span>
             </div>
             <div className="space-y-1">
-              <h3 className="text-4xl font-black">{stats.total.toFixed(2)}</h3>
+              <h3 className="text-4xl font-black">{formatCredits(stats.total)}</h3>
               <p className="text-white/80 font-bold text-sm uppercase tracking-tighter">Metric Tons CO2e</p>
             </div>
           </CardContent>
@@ -329,7 +337,7 @@ const CarbonCreditPage = () => {
               <span className="text-[10px] font-black uppercase tracking-widest text-green-600 bg-green-50 px-2 py-1 rounded-full">Verified Assets</span>
             </div>
             <div className="space-y-1">
-              <h3 className="text-4xl font-black text-gray-900">{stats.verified.toFixed(2)}</h3>
+              <h3 className="text-4xl font-black text-gray-900">{formatCredits(stats.verified)}</h3>
               <p className="text-gray-400 font-bold text-sm uppercase tracking-tighter">Available for Trade</p>
             </div>
           </CardContent>
@@ -344,7 +352,7 @@ const CarbonCreditPage = () => {
               <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-2 py-1 rounded-full">In Verification</span>
             </div>
             <div className="space-y-1">
-              <h3 className="text-4xl font-black text-gray-900">{stats.pending.toFixed(2)}</h3>
+              <h3 className="text-4xl font-black text-gray-900">{formatCredits(stats.pending)}</h3>
               <p className="text-gray-400 font-bold text-sm uppercase tracking-tighter">Processing Units</p>
             </div>
           </CardContent>
@@ -409,7 +417,7 @@ const CarbonCreditPage = () => {
                     </td>
                     <td className="py-6 px-8">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-black text-gray-900">{credit.creditsEarned.toFixed(2)}</span>
+                        <span className="text-lg font-black text-gray-900">{formatCredits(credit.creditsEarned)}</span>
                         <span className="text-[10px] font-bold text-gray-400 uppercase">MT</span>
                       </div>
                     </td>
