@@ -1,12 +1,9 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  CreditCard, 
-  TrendingUp, 
-  ShieldCheck, 
-  Clock, 
-  ArrowUpRight,
-  Filter,
+import {
+  TrendingUp,
+  ShieldCheck,
+  Clock,
   Download,
   Search,
   ChevronRight,
@@ -24,6 +21,8 @@ const CarbonCreditPage = () => {
   const [selectedFarm, setSelectedFarm] = React.useState('');
   const [periodStart, setPeriodStart] = React.useState('');
   const [periodEnd, setPeriodEnd] = React.useState('');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [selectedCredit, setSelectedCredit] = React.useState(null);
   const queryClient = useQueryClient();
 
   const { data: credits, isLoading, error } = useQuery({
@@ -58,13 +57,72 @@ const CarbonCreditPage = () => {
 
   const stats = React.useMemo(() => {
     if (!credits) return { total: 0, verified: 0, pending: 0 };
-    return credits.reduce((acc, curr) => {
-      acc.total += curr.creditsEarned;
-      if (curr.status === 'verified' || curr.status === 'issued') acc.verified += curr.creditsEarned;
-      if (curr.status === 'pending-verification') acc.pending += curr.creditsEarned;
-      return acc;
-    }, { total: 0, verified: 0, pending: 0 });
+    return credits.reduce(
+      (acc, curr) => {
+        acc.total += curr.creditsEarned;
+        if (curr.status === 'verified' || curr.status === 'issued') acc.verified += curr.creditsEarned;
+        if (curr.status === 'pending-verification') acc.pending += curr.creditsEarned;
+        return acc;
+      },
+      { total: 0, verified: 0, pending: 0 }
+    );
   }, [credits]);
+
+  const filteredCredits = React.useMemo(() => {
+    const term = (searchTerm || '').trim().toLowerCase();
+    if (!term) return credits || [];
+    return (credits || []).filter((c) => {
+      const farmName = String(c.farmId?.name || '').toLowerCase();
+      const city = String(c.farmId?.location?.city || '').toLowerCase();
+      const country = String(c.farmId?.location?.country || '').toLowerCase();
+      return farmName.includes(term) || city.includes(term) || country.includes(term);
+    });
+  }, [credits, searchTerm]);
+
+  const exportCreditsCsv = () => {
+    const rows = filteredCredits.map((c) => ({
+      farm: c.farmId?.name || 'Unknown Farm',
+      city: c.farmId?.location?.city || '',
+      country: c.farmId?.location?.country || '',
+      periodStart: c.periodStart ? new Date(c.periodStart).toISOString() : '',
+      periodEnd: c.periodEnd ? new Date(c.periodEnd).toISOString() : '',
+      creditsEarned: Number(c.creditsEarned || 0),
+      status: c.isEstimated ? 'estimated' : (c.status || ''),
+      creditType: c.creditType || '',
+      monthKey: c.monthKey || ''
+    }));
+
+    const header = Object.keys(rows[0] || {
+      farm: '',
+      city: '',
+      country: '',
+      periodStart: '',
+      periodEnd: '',
+      creditsEarned: 0,
+      status: '',
+      creditType: '',
+      monthKey: ''
+    });
+
+    const escape = (v) => {
+      const s = String(v ?? '');
+      const needsQuotes = /[\n\r,\"]/g.test(s);
+      const escaped = s.replace(/\"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const csv = [header.join(','), ...rows.map((r) => header.map((k) => escape(r[k])).join(','))].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `carbon-credits-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -82,13 +140,71 @@ const CarbonCreditPage = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Credit Details Modal */}
+      {selectedCredit && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg p-8 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-black text-gray-900">Credit Details</h2>
+                <p className="text-sm text-gray-500 font-medium mt-1">
+                  {selectedCredit.farmId?.name || 'Unknown Farm'}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedCredit(null)}
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Period</p>
+                <p className="mt-1 font-bold text-gray-800 text-sm">
+                  {selectedCredit.periodStart ? new Date(selectedCredit.periodStart).toLocaleDateString() : '—'}
+                  {' '}–{' '}
+                  {selectedCredit.periodEnd ? new Date(selectedCredit.periodEnd).toLocaleDateString() : '—'}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Credits</p>
+                <p className="mt-1 font-black text-gray-900 text-lg">
+                  {Number(selectedCredit.creditsEarned || 0).toFixed(2)} <span className="text-xs font-bold text-gray-400">MT</span>
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status</p>
+                <p className="mt-2">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(selectedCredit.status)}`}>
+                    {selectedCredit.isEstimated ? 'estimated' : selectedCredit.status?.replace('-', ' ')}
+                  </span>
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Type</p>
+                <p className="mt-1 font-bold text-gray-800 text-sm">
+                  {selectedCredit.creditType || 'final'}{selectedCredit.monthKey ? ` • ${selectedCredit.monthKey}` : ''}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <Button variant="outline" className="rounded-2xl" onClick={() => setSelectedCredit(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Generate Credits Modal */}
       {showGenerateModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-black text-gray-900">Generate Carbon Credits</h2>
-              <button 
+              <button
                 onClick={() => setShowGenerateModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
               >
@@ -168,20 +284,21 @@ const CarbonCreditPage = () => {
           <p className="text-gray-500 mt-1 font-medium">Monetize your farm's sustainable practices.</p>
         </div>
         <div className="flex gap-3">
-          <Button 
+          <Button
             onClick={() => setShowGenerateModal(true)}
             className="rounded-2xl h-12 px-6 font-bold shadow-lg shadow-primary/20 bg-primary text-white hover:bg-primary/90"
           >
             <Plus className="mr-2 h-4 w-4" />
             Generate Credits
           </Button>
-          <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold border-gray-200">
+          <Button
+            variant="outline"
+            onClick={exportCreditsCsv}
+            disabled={!filteredCredits?.length}
+            className="rounded-2xl h-12 px-6 font-bold border-gray-200"
+          >
             <Download className="mr-2 h-4 w-4" />
-            Export Report
-          </Button>
-          <Button variant="outline" className="rounded-2xl h-12 px-6 font-bold border-gray-200">
-            Marketplace
-            <ArrowUpRight className="ml-2 h-4 w-4" />
+            Export CSV
           </Button>
         </div>
       </div>
@@ -241,27 +358,26 @@ const CarbonCreditPage = () => {
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search by farm..." 
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by farm..."
                 className="w-full h-10 pl-10 pr-4 bg-gray-50 border-none rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-gray-100">
-              <Filter className="h-4 w-4 text-gray-500" />
-            </Button>
           </div>
         </div>
 
         <div className="overflow-x-auto">
           {isLoading ? (
             <div className="p-12 space-y-4">
-              {[1, 2, 3, 4, 5].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="h-16 bg-gray-50 rounded-2xl animate-pulse" />
               ))}
             </div>
-          ) : credits?.length > 0 ? (
-            <table className="w-full">
+          ) : filteredCredits?.length > 0 ? (
+            <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="bg-gray-50/50">
                   <th className="text-left py-4 px-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Farm Asset</th>
@@ -272,7 +388,7 @@ const CarbonCreditPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {credits.map((credit) => (
+                {filteredCredits.map((credit) => (
                   <tr key={credit._id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="py-6 px-8">
                       <div className="flex items-center gap-3">
@@ -299,11 +415,16 @@ const CarbonCreditPage = () => {
                     </td>
                     <td className="py-6 px-8">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusColor(credit.status)}`}>
-                        {credit.status?.replace('-', ' ')}
+                        {credit.isEstimated ? 'estimated' : credit.status?.replace('-', ' ')}
                       </span>
                     </td>
                     <td className="py-6 px-8 text-right">
-                      <button className="p-2 text-gray-300 group-hover:text-primary transition-colors">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCredit(credit)}
+                        className="p-2 text-gray-300 group-hover:text-primary transition-colors"
+                        aria-label="View credit details"
+                      >
                         <ChevronRight className="h-5 w-5" />
                       </button>
                     </td>

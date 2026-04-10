@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useNavigateBack } from '../hooks/useNavigateBack';
 import { 
   ShieldCheck, 
   TrendingUp, 
@@ -44,6 +45,7 @@ const ResiliencePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const farmId = searchParams.get('farmId');
   const queryClient = useQueryClient();
+  const goBack = useNavigateBack('/dashboard');
 
   console.log('ResiliencePage - farmId:', farmId);
 
@@ -52,7 +54,7 @@ const ResiliencePage = () => {
     queryFn: async () => {
       const response = await api.get('/farms');
       console.log('ResiliencePage - farms data:', response.data.data);
-      return response.data.data;
+      return response.data.data || [];
     }
   });
 
@@ -111,8 +113,8 @@ const ResiliencePage = () => {
           </div>
           <div className="flex gap-3">
             <Button onClick={() => refetch()} className="rounded-2xl h-12 px-8 font-bold">Try Again</Button>
-            <Button asChild variant="outline" className="rounded-2xl h-12 px-8 font-bold border-gray-200">
-              <Link to="/dashboard">Back to Portfolio</Link>
+            <Button onClick={goBack} variant="outline" className="rounded-2xl h-12 px-8 font-bold border-gray-200">
+              Back to Portfolio
             </Button>
           </div>
         </div>
@@ -174,8 +176,8 @@ const ResiliencePage = () => {
             <RefreshCw className={`mr-2 h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
             Sync Profile
           </Button>
-          <Button asChild variant="outline" className="flex-1 lg:flex-none rounded-2xl px-6 h-12 font-bold border-gray-200">
-             <Link to="/dashboard"><ArrowLeft className="mr-2 h-4 w-4" /> Portfolio</Link>
+          <Button onClick={goBack} variant="outline" className="flex-1 lg:flex-none rounded-2xl px-6 h-12 font-bold border-gray-200">
+             <ArrowLeft className="mr-2 h-4 w-4" /> Portfolio
           </Button>
         </div>
       </div>
@@ -261,36 +263,39 @@ const ResiliencePage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recommendations */}
-        <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden">
-          <CardHeader className="bg-gray-50 px-8 py-6 border-b border-gray-100">
+        <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden flex flex-col h-[400px]">
+          <CardHeader className="bg-gray-50 px-8 py-6 border-b border-gray-100 flex-shrink-0">
             <CardTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-amber-500" />
               <span className="font-black text-gray-900 uppercase tracking-wider text-sm">Strategic Recommendations</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-8 overflow-y-auto flex-1">
             <div className="space-y-4">
               {profile?.recommendations?.map((rec, i) => (
                 <div key={i} className="flex items-start gap-4 p-5 rounded-3xl bg-amber-50/30 border border-amber-100/50 group hover:bg-amber-50 transition-colors">
-                  <div className="bg-amber-100 p-2 rounded-xl text-amber-600 group-hover:scale-110 transition-transform">
+                  <div className="bg-amber-100 p-2 rounded-xl text-amber-600 group-hover:scale-110 transition-transform flex-shrink-0">
                     <Info className="h-5 w-5" />
                   </div>
                   <p className="text-sm font-bold text-amber-900 leading-relaxed">{rec}</p>
                 </div>
               ))}
+              {!profile?.recommendations?.length && (
+                <div className="text-center py-12 text-gray-400 font-medium">No recommendations available yet.</div>
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* History / Trend */}
-        <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden">
-          <CardHeader className="bg-gray-50 px-8 py-6 border-b border-gray-100">
+        <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden flex flex-col h-[400px]">
+          <CardHeader className="bg-gray-50 px-8 py-6 border-b border-gray-100 flex-shrink-0">
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
               <span className="font-black text-gray-900 uppercase tracking-wider text-sm">Resilience Trajectory</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-8 overflow-y-auto flex-1">
             <div className="space-y-6">
               {profile?.history?.slice().reverse().map((entry, i) => (
                 <div key={i} className="flex items-center justify-between p-4 rounded-2xl border border-gray-50">

@@ -1,18 +1,13 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
+import {
   X,
   Zap,
   Loader2,
-  Calendar,
-  Layers,
-  MapPin,
-  Check,
-  ChevronDown,
   Info,
   Camera,
-  Sprout,
-  Scaling
+  Scaling,
+  AlertCircle,
 } from 'lucide-react';
 import api from '../lib/axios';
 import { Button } from '../components/ui/Button';
@@ -33,6 +28,13 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
   });
   const [imageFile, setImageFile] = React.useState(null);
   const [previewUrl, setPreviewUrl] = React.useState(null);
+  const fileInputRef = React.useRef(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   // Fetch Practices
   const { data: practices } = useQuery({
@@ -103,11 +105,17 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleNext = () => setStep(prev => prev + 1);
@@ -276,7 +284,7 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
             <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
                <div 
                 className="relative h-64 rounded-[2rem] border-2 border-dashed border-gray-200 hover:border-indigo-400 transition-colors bg-gray-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden group"
-                onClick={() => document.getElementById('evidence-upload').click()}
+                onClick={() => fileInputRef.current?.click()}
               >
                 {previewUrl ? (
                   <img src={previewUrl} alt="Evidence" className="w-full h-full object-cover" />
@@ -285,11 +293,33 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
                     <div className="bg-white p-4 rounded-full shadow-sm mb-4 inline-block group-hover:scale-110 transition-transform">
                       <Camera className="h-8 w-8 text-indigo-600" />
                     </div>
-                    <p className="text-sm text-gray-500 font-bold">Upload Field Evidence</p>
-                    <p className="text-xs text-gray-400 mt-1">Photo required for carbon verification</p>
+                    <p className="text-sm text-gray-500 font-bold">Upload Start Evidence (Optional)</p>
+                    <p className="text-xs text-gray-400 mt-1">You can also upload completion evidence later to verify and issue credits</p>
                   </div>
                 )}
-                <input id="evidence-upload" type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+
+                {previewUrl && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearImage();
+                    }}
+                    className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/90 hover:bg-white shadow flex items-center justify-center"
+                    title="Remove image"
+                  >
+                    <X className="h-5 w-5 text-gray-700" />
+                  </button>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  id="evidence-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
               </div>
 
               <div className="space-y-2">
@@ -334,11 +364,11 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
             </Button>
           ) : (
             <Button 
-              disabled={!imageFile || logActivityMutation.isPending}
+              disabled={logActivityMutation.isPending}
               onClick={handleSubmit}
               className="flex-1 h-14 rounded-2xl font-black uppercase text-xs bg-indigo-600 shadow-xl shadow-indigo-200"
             >
-              {logActivityMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Log & Verify Activity'}
+              {logActivityMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Log Activity'}
             </Button>
           )}
         </div>

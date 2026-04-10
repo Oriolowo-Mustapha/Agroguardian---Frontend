@@ -11,6 +11,15 @@ import WeatherRiskPage from './pages/WeatherRiskPage';
 import ResiliencePage from './pages/ResiliencePage';
 import CarbonCreditPage from './pages/CarbonCreditPage';
 import DiagnosisPage from './pages/DiagnosisPage';
+import LivestockPage from './pages/LivestockPage';
+import { LivestockDetailsPage } from './pages/LivestockDetailsPage';
+import LivestockHealthPage from './pages/LivestockHealthPage';
+import LivestockHealthRecordsPage from './pages/LivestockHealthRecordsPage';
+import LivestockDiagnosisPage from './pages/LivestockDiagnosisPage';
+import LivestockFeedingPage from './pages/LivestockFeedingPage';
+import LivestockBreedingPage from './pages/LivestockBreedingPage';
+import LivestockInventoryPage from './pages/LivestockInventoryPage';
+import VetConsultationPage from './pages/VetConsultationPage';
 import DashboardLayout from './components/DashboardLayout';
 import { Button } from './components/ui/Button';
 import useAuthStore from './store/authStore';
@@ -107,6 +116,78 @@ function App() {
             element={
               <ProtectedRoute>
                 <DiagnosisPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/livestock" 
+            element={
+              <ProtectedRoute>
+                <LivestockPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/livestock/:livestockId" 
+            element={
+              <ProtectedRoute>
+                <LivestockDetailsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/livestock-health" 
+            element={
+              <ProtectedRoute>
+                <LivestockHealthRecordsPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/livestock/:livestockId/health" 
+            element={
+              <ProtectedRoute>
+                <LivestockHealthPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/livestock-diagnosis" 
+            element={
+              <ProtectedRoute>
+                <LivestockDiagnosisPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/livestock-feeding" 
+            element={
+              <ProtectedRoute>
+                <LivestockFeedingPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/livestock-breeding" 
+            element={
+              <ProtectedRoute>
+                <LivestockBreedingPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/livestock-inventory" 
+            element={
+              <ProtectedRoute>
+                <LivestockInventoryPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/vet-consultation" 
+            element={
+              <ProtectedRoute>
+                <VetConsultationPage />
               </ProtectedRoute>
             } 
           />

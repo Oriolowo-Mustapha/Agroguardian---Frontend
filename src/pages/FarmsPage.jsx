@@ -12,7 +12,8 @@ import {
   Upload,
   ExternalLink,
   Droplets,
-  Sprout
+  Sprout,
+  CloudSun
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../lib/axios';
@@ -29,7 +30,7 @@ const FarmsPage = () => {
     queryKey: ['farms'],
     queryFn: async () => {
       const response = await api.get('/farms');
-      return response.data.data;
+      return response.data.data || [];
     }
   });
 
@@ -46,7 +47,7 @@ const FarmsPage = () => {
           <h1 className="text-3xl font-bold text-gray-900">My Farms</h1>
           <p className="text-gray-500 mt-1">Manage and monitor all your agricultural assets.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="rounded-full px-8 h-12 text-lg font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+        <Button onClick={() => setIsModalOpen(true)} className="rounded-full px-8 h-12 text-lg font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 w-full sm:w-auto">
           <Plus className="mr-2 h-5 w-5" />
           Add Farm
         </Button>
@@ -136,8 +137,14 @@ const FarmsPage = () => {
                       <ExternalLink className="ml-2 h-4 w-4 opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0" />
                     </Link>
                   </Button>
-                  <Button className="flex-1 rounded-xl h-12 font-bold bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20">
-                    Sync Climate
+                  <Button
+                    className="flex-1 rounded-xl h-12 font-bold bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+                    asChild
+                  >
+                    <Link to={`/weather?farmId=${encodeURIComponent(farm._id)}`}>
+                      View Weather Risk
+                      <CloudSun className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                 </div>
               </CardContent>

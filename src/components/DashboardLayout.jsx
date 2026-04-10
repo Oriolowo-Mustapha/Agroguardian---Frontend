@@ -17,7 +17,9 @@ import {
   CheckCircle2,
   Clock,
   Zap,
-  Info
+  Info,
+  PawPrint,
+  Heart
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/axios';
@@ -113,7 +115,9 @@ const DashboardLayout = ({ children }) => {
   const menuItems = [
     { icon: LayoutDashboard, label: 'Overview', href: '/dashboard' },
     { icon: FarmIcon, label: 'My Farms', href: '/farms' },
+    { icon: PawPrint, label: 'Livestock', href: '/livestock' },
     { icon: Stethoscope, label: 'Crop Diagnosis', href: '/diagnosis' },
+    { icon: Heart, label: 'Livestock Health', href: '/livestock-diagnosis' },
     { icon: CloudSun, label: 'Weather & Risks', href: '/weather' },
     { icon: ShieldCheck, label: 'Resilience Index', href: '/resilience' },
     { icon: CreditCard, label: 'Carbon Credits', href: '/credits' },
@@ -199,7 +203,7 @@ const DashboardLayout = ({ children }) => {
               {isNotificationsOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsNotificationsOpen(false)} />
-                  <div className="absolute right-0 mt-4 w-80 md:w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                  <div className="absolute right-0 mt-4 w-[calc(100vw-2rem)] sm:w-80 md:w-96 bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
                     <div className="p-6 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
                       <h3 className="font-black text-gray-900 uppercase tracking-tight">Intelligence Alerts</h3>
                       {unreadCount > 0 && (

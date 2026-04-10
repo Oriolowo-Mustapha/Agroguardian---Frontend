@@ -20,7 +20,9 @@ import {
   Calendar,
   Sprout,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  PawPrint,
+  Heart
 } from 'lucide-react';
 import api from '../lib/axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -95,6 +97,14 @@ const DashboardOverview = () => {
         throw err;
       }
     }
+  });
+
+  const { data: livestockSummary } = useQuery({
+    queryKey: ['livestock-dashboard-summary'],
+    queryFn: async () => {
+      const res = await api.get('/livestock/dashboard-summary');
+      return res.data.data;
+    },
   });
 
   const filteredFarms = React.useMemo(() => {
@@ -245,6 +255,45 @@ const DashboardOverview = () => {
         />
       </div>
 
+      {/* Livestock Snapshot */}
+      {livestockSummary?.overall && (
+        <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">Livestock Snapshot</h2>
+              <p className="text-gray-500 mt-1 font-medium">Across all farms</p>
+            </div>
+            <Button asChild className="rounded-2xl h-12 px-6 font-black shadow-lg shadow-primary/20">
+              <Link to="/livestock">Manage Livestock</Link>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard
+              title="Total Livestock"
+              value={livestockSummary.overall.totalAnimals || 0}
+              description="Active animals (batch counts included)"
+              icon={PawPrint}
+              color="bg-primary shadow-primary/30"
+            />
+            <StatCard
+              title="Sick / Treatment"
+              value={livestockSummary.overall.sickCount || 0}
+              description="Sick, critical, or under treatment"
+              icon={Heart}
+              color={(livestockSummary.overall.sickCount || 0) > 0 ? "bg-amber-600 shadow-amber-300" : "bg-gray-400"}
+            />
+            <StatCard
+              title="Critical"
+              value={livestockSummary.overall.criticalCount || 0}
+              description="Requires urgent attention"
+              icon={AlertTriangle}
+              color={(livestockSummary.overall.criticalCount || 0) > 0 ? "bg-red-500 shadow-red-300" : "bg-gray-400"}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Portfolio Browser Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div className="relative w-full lg:w-96 group">
@@ -329,18 +378,18 @@ const DashboardOverview = () => {
 
                 {/* Weather Quick Glance */}
                 {viewMode === 'grid' && (
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="bg-blue-50/50 p-3 rounded-2xl flex flex-col items-center justify-center">
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="bg-blue-50/50 p-2.5 sm:p-3 rounded-2xl flex flex-col items-center justify-center">
                       <Thermometer className="h-4 w-4 text-blue-600 mb-1" />
-                      <span className="text-lg font-black text-gray-900">{farm.latestWeather?.current?.temperature ?? '--'}°</span>
+                      <span className="text-base sm:text-lg font-black text-gray-900">{farm.latestWeather?.current?.temperature ?? '--'}°</span>
                     </div>
-                    <div className="bg-indigo-50/50 p-3 rounded-2xl flex flex-col items-center justify-center">
+                    <div className="bg-indigo-50/50 p-2.5 sm:p-3 rounded-2xl flex flex-col items-center justify-center">
                       <Droplets className="h-4 w-4 text-indigo-600 mb-1" />
-                      <span className="text-lg font-black text-gray-900">{farm.latestWeather?.current?.humidity ?? '--'}%</span>
+                      <span className="text-base sm:text-lg font-black text-gray-900">{farm.latestWeather?.current?.humidity ?? '--'}%</span>
                     </div>
-                    <div className="bg-sky-50/50 p-3 rounded-2xl flex flex-col items-center justify-center">
+                    <div className="bg-sky-50/50 p-2.5 sm:p-3 rounded-2xl flex flex-col items-center justify-center">
                       <Wind className="h-4 w-4 text-sky-600 mb-1" />
-                      <span className="text-lg font-black text-gray-900">{farm.latestWeather?.current?.windSpeed ?? '--'}</span>
+                      <span className="text-base sm:text-lg font-black text-gray-900">{farm.latestWeather?.current?.windSpeed ?? '--'}</span>
                     </div>
                   </div>
                 )}

@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { Leaf, Shield, Cloud, CreditCard, ArrowRight, Menu, X } from 'lucide-react';
+import {
+  Leaf,
+  Shield,
+  Cloud,
+  CreditCard,
+  ArrowRight,
+  Menu,
+  X,
+  PawPrint,
+  Syringe,
+  LineChart,
+  Skull
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import useAuthStore from '../store/authStore';
@@ -90,7 +102,6 @@ const LandingPage = () => {
   const auth = useAuthStore();
   const isAuthenticated = auth?.isAuthenticated;
 
-  console.log('LandingPage rendered, isAuthenticated:', isAuthenticated);
 
   return (
     <div className="min-h-screen bg-[#FDFCF0]">
@@ -116,7 +127,7 @@ const LandingPage = () => {
                 Empowering Farmers with <span className="text-primary italic">AI Precision</span>
               </h1>
               <p className="text-xl text-gray-600 mb-10 leading-relaxed max-w-2xl">
-                AgroGuardian AI helps you diagnose crop diseases, monitor climate resilience, and earn carbon credits—all in one place.
+                AgroGuardian AI helps you manage crops and livestock: track animal health, due vaccinations, inventory & profit, weather risks, and sustainability in one dashboard.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Link 
@@ -147,11 +158,11 @@ const LandingPage = () => {
               />
               <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl flex items-center gap-4">
                 <div className="bg-green-100 p-3 rounded-full">
-                  <Shield className="text-green-600 h-6 w-6" />
+                  <Syringe className="text-green-600 h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 font-medium">Health Status</p>
-                  <p className="text-lg font-bold text-gray-900">98.2% Optimal</p>
+                  <p className="text-sm text-gray-500 font-medium">Upcoming Care</p>
+                  <p className="text-lg font-bold text-gray-900">Vaccinations & Deworming</p>
                 </div>
               </div>
             </motion.div>
@@ -164,33 +175,60 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-primary font-bold tracking-widest uppercase text-sm mb-4">Core Features</h2>
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900">Built for Modern Agriculture</h2>
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900">Built for Real Farm Operations</h2>
+            <p className="text-gray-600 text-lg mt-4 max-w-3xl mx-auto">
+              From livestock health to farm finances—AgroGuardian AI helps you run day-to-day operations and make better decisions.
+            </p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <FeatureCard 
-              icon={Leaf}
-              title="Crop Diagnosis"
-              description="Identify diseases instantly using our advanced AI. Just snap a photo and get expert advice."
+            <FeatureCard
+              icon={PawPrint}
+              title="Livestock Management"
+              description="Register individuals and batches (poultry/fish), track status, growth, breeding, and feeding."
               delay={0.1}
             />
-            <FeatureCard 
+            <FeatureCard
+              icon={Syringe}
+              title="Health & Due Alerts"
+              description="Log vaccinations and deworming, and get reminders when care is due—so nothing is missed."
+              delay={0.2}
+            />
+            <FeatureCard
+              icon={LineChart}
+              title="Inventory & Finance"
+              description="Track purchases, sales, estimated value, and net profit with clear farm-level summaries."
+              delay={0.3}
+            />
+            <FeatureCard
+              icon={Skull}
+              title="Mortality & Loss Tracking"
+              description="Log deaths and losses (including batch quantity changes) to keep inventory and profit accurate."
+              delay={0.4}
+            />
+            <FeatureCard
+              icon={Leaf}
+              title="AI Diagnosis"
+              description="Get AI help for crop disease identification and general farm guidance when issues show up."
+              delay={0.5}
+            />
+            <FeatureCard
               icon={Cloud}
               title="Weather Risks"
               description="Real-time weather monitoring and predictive risk analysis tailored to your farm's location."
-              delay={0.2}
+              delay={0.6}
             />
-            <FeatureCard 
+            <FeatureCard
               icon={Shield}
               title="Climate Resilience"
-              description="Track your farm's ability to withstand climate changes with detailed resilience scores."
-              delay={0.3}
+              description="Track resilience scores and improve your farm's readiness for climate changes over time."
+              delay={0.7}
             />
-            <FeatureCard 
+            <FeatureCard
               icon={CreditCard}
               title="Carbon Credits"
-              description="Monetize your sustainable practices by generating and tracking carbon credits."
-              delay={0.4}
+              description="Monetize sustainable practices by generating and tracking carbon credits in one place."
+              delay={0.8}
             />
           </div>
         </div>
@@ -214,9 +252,10 @@ const LandingPage = () => {
               </div>
 
               {[
-                { step: "01", title: "Register Your Farm", desc: "Add your farm location and crop details to get personalized insights." },
-                { step: "02", title: "Monitor Health", desc: "Upload photos or check weather alerts to keep your crops healthy." },
-                { step: "03", title: "Scale Sustainably", desc: "Earn carbon credits and improve your farm's climate resilience." }
+                { step: "01", title: "Register Your Farm", desc: "Add your farm profile and location to unlock personalized insights." },
+                { step: "02", title: "Add Livestock & Crops", desc: "Register animals (individuals or batches) and manage your farm activities." },
+                { step: "03", title: "Log Health & Get Alerts", desc: "Record vaccinations/deworming and get due reminders to prevent outbreaks." },
+                { step: "04", title: "Track Value & Profit", desc: "Monitor inventory, sales, losses, and net profit with simple summaries." }
               ].map((item, index) => (
                 <div key={index} className="flex gap-6">
                   <div className="text-4xl font-bold text-primary/20 leading-none">{item.step}</div>
@@ -240,15 +279,19 @@ const LandingPage = () => {
               <span className="text-3xl font-bold">AgroGuardian AI</span>
             </div>
             <p className="text-gray-400 max-w-sm mb-8">
-              Revolutionizing agriculture through artificial intelligence and sustainable practices. Join the future of farming today.
+              All-in-one farm operations: livestock health, inventory & profit, weather risk insights, and sustainability tracking.
             </p>
           </div>
           <div>
             <h4 className="font-bold mb-6">Product</h4>
             <ul className="space-y-4 text-gray-400">
-              <li><a href="#" className="hover:text-primary transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Weather API</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Carbon Credits</a></li>
+              <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
+              <li><a href="#how-it-works" className="hover:text-primary transition-colors">How it Works</a></li>
+              <li>
+                <Link to={isAuthenticated ? "/dashboard" : "/register"} className="hover:text-primary transition-colors">
+                  {isAuthenticated ? 'Dashboard' : 'Get Started'}
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

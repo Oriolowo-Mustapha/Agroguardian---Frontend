@@ -49,6 +49,7 @@ const AddCropModal = ({ isOpen, onClose, farmId }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['farm', farmId]);
+      queryClient.invalidateQueries(['farm-crops', farmId]);
       onClose();
       resetForm();
     }

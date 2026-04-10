@@ -12,7 +12,7 @@ import api from '../lib/axios';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
-const CreateSeasonModal = ({ isOpen, onClose, farmId, farm }) => {
+const CreateSeasonModal = ({ isOpen, onClose, farmId, farm, remainingArea, usedArea }) => {
   const queryClient = useQueryClient();
   const [formData, setFormData] = React.useState({
     cropId: '',
@@ -33,7 +33,6 @@ const CreateSeasonModal = ({ isOpen, onClose, farmId, farm }) => {
 
   const createSeasonMutation = useMutation({
     mutationFn: async (data) => {
-      console.log("Creating season with data:", data);
       return await api.post(`/practices/farms/${farmId}/seasons`, data);
     },
     onSuccess: () => {
@@ -50,10 +49,8 @@ const CreateSeasonModal = ({ isOpen, onClose, farmId, farm }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Handle submit called. FormData:", formData);
     if (!formData.cropId || !formData.area) {
-        console.warn("Validation failed: cropId or area missing");
-        return;
+      return;
     }
     
     // Convert area to number for backend validation
@@ -127,12 +124,17 @@ const CreateSeasonModal = ({ isOpen, onClose, farmId, farm }) => {
                 <Scaling className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input 
                   type="number" 
-                  placeholder={`Max ${farm?.size}`}
+                  placeholder={remainingArea != null ? `Max ${remainingArea}` : `Max ${farm?.size}`}
                   value={formData.area}
                   onChange={(e) => setFormData({ ...formData, area: e.target.value })}
                   className="h-14 pl-12 rounded-2xl bg-gray-50 border-gray-100 font-bold"
                 />
               </div>
+              {remainingArea != null && (
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-2">
+                  Available: {remainingArea} {farm?.sizeUnit}{usedArea != null ? ` • In use: ${usedArea}` : ''}
+                </p>
+              )}
             </div>
           </div>
 
