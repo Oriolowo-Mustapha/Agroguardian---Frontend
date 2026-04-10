@@ -30,19 +30,14 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
   const [previewUrl, setPreviewUrl] = React.useState(null);
   const fileInputRef = React.useRef(null);
 
-  React.useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
   // Fetch Practices
   const { data: practices } = useQuery({
     queryKey: ['practices'],
     queryFn: async () => {
       const response = await api.get('/practices');
       return response.data.data;
-    }
+    },
+    enabled: isOpen
   });
 
   // Fetch Farm Crops
@@ -52,7 +47,7 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
       const response = await api.get(`/practices/farms/${farmId}/crops`);
       return response.data.data;
     },
-    enabled: !!farmId
+    enabled: !!farmId && isOpen
   });
 
   // Fetch Active Seasons
@@ -62,7 +57,7 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
       const response = await api.get(`/practices/farms/${farmId}/seasons`);
       return response.data.data?.filter(s => s.status === 'active');
     },
-    enabled: !!farmId
+    enabled: !!farmId && isOpen
   });
 
   const logActivityMutation = useMutation({
@@ -87,6 +82,12 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
       resetForm();
     }
   });
+
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const resetForm = () => {
     setStep(1);
@@ -137,8 +138,6 @@ const LogActivityModal = ({ isOpen, onClose, farmId, farm }) => {
   };
 
   if (!isOpen) return null;
-
-  //const selectedPractice = practices?.find(p => p._id === formData.practiceId);
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">

@@ -20,6 +20,36 @@ const CompleteActivityModal = ({ isOpen, onClose, activity, farmId }) => {
     if (!isOpen) reset();
   }, [isOpen, reset]);
 
+  const practiceName = activity?.practiceId?.name || 'Practice';
+  const status = activity?.status;
+  const canComplete = status === 'active' || status === 'pending_start';
+
+  const gate = activity?.completionEligibility || null;
+  const gateMaturity = gate?.requiredMaturity || null;
+
+  const seasonObj = activity?.cropSeasonId && typeof activity.cropSeasonId === 'object' ? activity.cropSeasonId : null;
+  const plantedDate = seasonObj?.plantedDate ? new Date(seasonObj.plantedDate) : null;
+  const cropName = activity?.cropId?.name;
+  const category = activity?.cropId?.category;
+
+  const { data: maturity } = useQuery({
+    queryKey: ['crop-maturity', cropName, category],
+    queryFn: async () => {
+      if (!cropName) return null;
+      const res = await api.get('/practices/reference/crops/maturity', { params: { name: cropName, category } });
+      return res.data.data;
+    },
+    enabled: !!cropName && !gateMaturity && isOpen && !!activity,
+  });
+
+  const computedDaysSincePlanted = React.useMemo(() => {
+    if (!plantedDate) return null;
+    const now = new Date();
+    const raw = Math.floor((now.getTime() - plantedDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (!Number.isFinite(raw)) return null;
+    return Math.max(0, raw);
+  }, [plantedDate]);
+
   const completeMutation = useMutation({
     mutationFn: async () => {
       if (!activity?._id) throw new Error('Activity is required');
@@ -43,36 +73,6 @@ const CompleteActivityModal = ({ isOpen, onClose, activity, farmId }) => {
   });
 
   if (!isOpen || !activity) return null;
-
-  const practiceName = activity.practiceId?.name || 'Practice';
-  const status = activity.status;
-  const canComplete = status === 'active' || status === 'pending_start';
-
-  const gate = activity?.completionEligibility || null;
-  const gateMaturity = gate?.requiredMaturity || null;
-
-  const seasonObj = activity?.cropSeasonId && typeof activity.cropSeasonId === 'object' ? activity.cropSeasonId : null;
-  const plantedDate = seasonObj?.plantedDate ? new Date(seasonObj.plantedDate) : null;
-  const cropName = activity?.cropId?.name;
-  const category = activity?.cropId?.category;
-
-  const { data: maturity } = useQuery({
-    queryKey: ['crop-maturity', cropName, category],
-    queryFn: async () => {
-      if (!cropName) return null;
-      const res = await api.get('/practices/reference/crops/maturity', { params: { name: cropName, category } });
-      return res.data.data;
-    },
-    enabled: !!cropName && !gateMaturity,
-  });
-
-  const computedDaysSincePlanted = React.useMemo(() => {
-    if (!plantedDate) return null;
-    const now = new Date();
-    const raw = Math.floor((now.getTime() - plantedDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (!Number.isFinite(raw)) return null;
-    return Math.max(0, raw);
-  }, [plantedDate]);
 
   const resolvedMaturity = gateMaturity || maturity;
   const daysSincePlanted = gate?.daysSincePlanted ?? computedDaysSincePlanted;

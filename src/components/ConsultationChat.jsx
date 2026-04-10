@@ -110,9 +110,9 @@ export default function ConsultationChat({
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
   const queryClient = useQueryClient();
+  const prevExistingIdRef = useRef(existingConsultationId);
 
   // Sync state when existingConsultationId prop changes
-  const prevExistingIdRef = useRef(existingConsultationId);
   if (existingConsultationId !== prevExistingIdRef.current) {
     prevExistingIdRef.current = existingConsultationId;
     if (existingConsultationId) {
