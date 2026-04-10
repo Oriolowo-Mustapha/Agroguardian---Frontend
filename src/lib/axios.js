@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://agro-guardian-ai-hazel.vercel.app/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -28,8 +28,12 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) throw new Error('Missing refresh token');
+
         const response = await axios.post(`${api.defaults.baseURL}/auth/refresh-token`, { refreshToken });
-        const { accessToken } = response.data;
+        const accessToken = response.data?.data?.accessToken || response.data?.accessToken;
+        if (!accessToken) throw new Error('Refresh did not return accessToken');
+
         localStorage.setItem('accessToken', accessToken);
         api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
         return api(originalRequest);

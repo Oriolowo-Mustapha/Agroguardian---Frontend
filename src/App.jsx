@@ -4,6 +4,7 @@ import { CreditCard } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import GoogleAuthCallbackPage from './pages/GoogleAuthCallbackPage';
 import DashboardOverview from './pages/DashboardOverview';
 import FarmsPage from './pages/FarmsPage';
 import FarmDetailsPage from './pages/FarmDetailsPage';
@@ -61,6 +62,14 @@ function App() {
                 <RegisterPage />
               </PublicRoute>
             } 
+          />
+          <Route
+            path="/auth/google/callback"
+            element={
+              <PublicRoute>
+                <GoogleAuthCallbackPage />
+              </PublicRoute>
+            }
           />
           <Route 
             path="/dashboard" 

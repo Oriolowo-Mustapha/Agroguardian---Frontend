@@ -7,9 +7,18 @@ const useAuthStore = create((set) => ({
   isAuthenticated: !!localStorage.getItem('accessToken'),
 
   setAuth: (user, accessToken, refreshToken) => {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    set({ user, accessToken, refreshToken, isAuthenticated: true });
+    if (accessToken) localStorage.setItem('accessToken', accessToken);
+    else localStorage.removeItem('accessToken');
+
+    if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
+    else localStorage.removeItem('refreshToken');
+
+    set({
+      user: user ?? null,
+      accessToken: accessToken ?? null,
+      refreshToken: refreshToken ?? null,
+      isAuthenticated: !!accessToken,
+    });
   },
 
   logout: () => {
