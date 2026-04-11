@@ -6,14 +6,21 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Leaf, ArrowRight, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';  
 import api from '../lib/axios';
 
 const registerSchema = z.object({
-  fullName: z.string().min(2, 'Full name must be at least 2 characters'),
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(6, 'Confirm password must be at least 6 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+    ),
+  confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -52,12 +59,12 @@ const RegisterPage = () => {
     return (
       <div className="min-h-screen bg-[#FDFCF0] flex flex-col items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl border-none text-center p-8">
-          <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">   
             <Leaf className="text-green-600 h-10 w-10" />
           </div>
           <CardTitle className="text-2xl font-bold mb-2">Check your email</CardTitle>
           <CardDescription className="text-lg">
-            We've sent a verification link to your email address. Please verify your account to continue.
+            We've sent a verification link to your email address. Please verify your account to continue.       
           </CardDescription>
           <Button className="mt-8 w-full" onClick={() => navigate('/login')}>
             Go to Login
@@ -86,19 +93,31 @@ const RegisterPage = () => {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-medium border border-red-100">
+              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-medium border border-red-100"> 
                 {error}
               </div>
             )}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700" htmlFor="fullName">Full Name</label>
-              <Input
-                id="fullName"
-                placeholder="John Doe"
-                {...register('fullName')}
-                className={errors.fullName ? 'border-red-500' : ''}
-              />
-              {errors.fullName && <p className="text-xs text-red-500">{errors.fullName.message}</p>}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700" htmlFor="firstName">First Name</label>
+                <Input
+                  id="firstName"
+                  placeholder="John"
+                  {...register('firstName')}
+                  className={errors.firstName ? 'border-red-500' : ''}
+                />
+                {errors.firstName && <p className="text-xs text-red-500">{errors.firstName.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700" htmlFor="lastName">Last Name</label>
+                <Input
+                  id="lastName"
+                  placeholder="Doe"
+                  {...register('lastName')}
+                  className={errors.lastName ? 'border-red-500' : ''}
+                />
+                {errors.lastName && <p className="text-xs text-red-500">{errors.lastName.message}</p>}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="email">Email</label>
@@ -145,7 +164,7 @@ const RegisterPage = () => {
               )}
             </Button>
           </form>
-          
+
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-gray-200"></span>
@@ -155,11 +174,11 @@ const RegisterPage = () => {
             </div>
           </div>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full border-gray-200 hover:bg-gray-50"
             onClick={() => {
-              const apiBase = import.meta.env.VITE_API_URL || 'https://agro-guardian-ai-three.vercel.app/api';
+              const apiBase = import.meta.env.VITE_API_URL || 'https://agro-guardian-ai-three.vercel.app/api';  
               const redirect = `${window.location.origin}/auth/google/callback`;
               window.location.href = `${apiBase}/auth/google?redirect=${encodeURIComponent(redirect)}`;
             }}

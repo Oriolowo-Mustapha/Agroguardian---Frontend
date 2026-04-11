@@ -6,13 +6,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Leaf, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';  
 import api from '../lib/axios';
 import useAuthStore from '../store/authStore';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 const LoginPage = () => {
@@ -72,7 +72,7 @@ const LoginPage = () => {
               </div>
             )}
             {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-medium border border-red-100">
+              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-medium border border-red-100"> 
                 {error}
               </div>
             )}
@@ -89,7 +89,7 @@ const LoginPage = () => {
             </div>
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="text-sm font-medium text-gray-700" htmlFor="password">Password</label>
+                <label className="text-sm font-medium text-gray-700" htmlFor="password">Password</label>        
                 <Link to="/forgot-password" size="sm" className="text-xs text-primary hover:underline">
                   Forgot password?
                 </Link>
@@ -116,7 +116,7 @@ const LoginPage = () => {
               )}
             </Button>
           </form>
-          
+
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-gray-200"></span>
@@ -126,11 +126,11 @@ const LoginPage = () => {
             </div>
           </div>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full border-gray-200 hover:bg-gray-50"
             onClick={() => {
-              const apiBase = import.meta.env.VITE_API_URL || 'https://agro-guardian-ai-three.vercel.app/api';
+              const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';  
               const redirect = `${window.location.origin}/auth/google/callback`;
               window.location.href = `${apiBase}/auth/google?redirect=${encodeURIComponent(redirect)}`;
             }}
