@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Leaf, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Leaf, ArrowRight, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';  
@@ -21,12 +21,14 @@ const LoginPage = () => {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [error, setError] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const sessionExpired = searchParams.get('sessionExpired') === 'true';
 
   const {
     register,
     handleSubmit,
+    setError: setFormFieldError,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
@@ -41,7 +43,15 @@ const LoginPage = () => {
       setAuth(user, accessToken, refreshToken);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      const responseData = err.response?.data;
+      if (responseData?.errors && Array.isArray(responseData.errors)) {
+        responseData.errors.forEach((e) => {
+          setFormFieldError(e.field, { type: 'manual', message: e.message });
+        });
+        setError('Login failed. Please check the fields below.');
+      } else {
+        setError(responseData?.message || 'Login failed. Please check your credentials.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -94,12 +104,21 @@ const LoginPage = () => {
                   Forgot password?
                 </Link>
               </div>
-              <Input
-                id="password"
-                type="password"
-                {...register('password')}
-                className={errors.password ? 'border-red-500' : ''}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password')}
+                  className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
             </div>
             <Button type="submit" className="w-full h-11 text-lg font-bold" disabled={isLoading}>

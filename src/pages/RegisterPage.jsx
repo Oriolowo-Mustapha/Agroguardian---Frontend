@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Leaf, ArrowRight, Loader2 } from 'lucide-react';
+import { Leaf, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';  
@@ -20,7 +20,7 @@ const registerSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
       'Password must contain at least one uppercase letter, one lowercase letter, and one number'
     ),
-  confirmPassword: z.string(),
+  confirmPassword: z.string().min(1, 'Confirm password is required'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -31,10 +31,13 @@ const RegisterPage = () => {
   const [error, setError] = React.useState('');
   const [success, setSuccess] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   const {
     register,
     handleSubmit,
+    setError: setFormFieldError,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerSchema),
@@ -49,7 +52,15 @@ const RegisterPage = () => {
       setSuccess(true);
       setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      const responseData = err.response?.data;
+      if (responseData?.errors && Array.isArray(responseData.errors)) {
+        responseData.errors.forEach((e) => {
+          setFormFieldError(e.field, { type: 'manual', message: e.message });
+        });
+        setError('Validation failed. Please check the fields below.');
+      } else {
+        setError(responseData?.message || 'Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -99,17 +110,17 @@ const RegisterPage = () => {
             )}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700" htmlFor="firstName">First Name</label>
+                <label className="text-sm font-medium text-gray-700" htmlFor="firstName">First Name</label>     
                 <Input
                   id="firstName"
                   placeholder="John"
                   {...register('firstName')}
                   className={errors.firstName ? 'border-red-500' : ''}
                 />
-                {errors.firstName && <p className="text-xs text-red-500">{errors.firstName.message}</p>}
+                {errors.firstName && <p className="text-xs text-red-500">{errors.firstName.message}</p>}        
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700" htmlFor="lastName">Last Name</label>
+                <label className="text-sm font-medium text-gray-700" htmlFor="lastName">Last Name</label>       
                 <Input
                   id="lastName"
                   placeholder="Doe"
@@ -132,22 +143,40 @@ const RegisterPage = () => {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="password">Password</label>
-              <Input
-                id="password"
-                type="password"
-                {...register('password')}
-                className={errors.password ? 'border-red-500' : ''}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password')}
+                  className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="confirmPassword">Confirm Password</label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                {...register('confirmPassword')}
-                className={errors.confirmPassword ? 'border-red-500' : ''}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  {...register('confirmPassword')}
+                  className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>}
             </div>
             <Button type="submit" className="w-full h-11 text-lg font-bold" disabled={isLoading}>
@@ -178,7 +207,7 @@ const RegisterPage = () => {
             variant="outline"
             className="w-full border-gray-200 hover:bg-gray-50"
             onClick={() => {
-              const apiBase = import.meta.env.VITE_API_URL || 'https://agro-guardian-ai-three.vercel.app/api';  
+              const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';  
               const redirect = `${window.location.origin}/auth/google/callback`;
               window.location.href = `${apiBase}/auth/google?redirect=${encodeURIComponent(redirect)}`;
             }}
