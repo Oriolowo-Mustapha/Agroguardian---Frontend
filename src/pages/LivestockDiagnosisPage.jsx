@@ -485,29 +485,15 @@ const DiagnosisDetailsModal = ({ isOpen, onClose, diagnosisId, initialDiagnosis,
         {/* Footer */}
         <div className="border-t border-gray-100 p-6 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              className="rounded-xl"
-              disabled={updateStatusMutation.isPending || d?.status === 'detected'}
-              onClick={() => updateStatusMutation.mutate('detected')}
-            >
-              Mark Detected
-            </Button>
-            <Button
-              variant="outline"
-              className="rounded-xl"
-              disabled={updateStatusMutation.isPending || d?.status === 'treating'}
-              onClick={() => updateStatusMutation.mutate('treating')}
-            >
-              Mark Treating
-            </Button>
-            <Button
-              className="rounded-xl"
-              disabled={updateStatusMutation.isPending || d?.status === 'resolved'}
-              onClick={() => updateStatusMutation.mutate('resolved')}
-            >
-              Mark Resolved
-            </Button>
+            {d?.status !== 'resolved' && (
+              <Button
+                className="rounded-xl"
+                disabled={updateStatusMutation.isPending}
+                onClick={() => updateStatusMutation.mutate('resolved')}
+              >
+                Mark Resolved
+              </Button>
+            )}
           </div>
           <Button variant="outline" className="rounded-xl" onClick={onClose}>
             Close

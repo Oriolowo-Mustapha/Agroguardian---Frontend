@@ -53,7 +53,8 @@ const StatusBadge = ({ status }) => {
     processing: { label: 'Analyzing', icon: RefreshCw, className: 'bg-blue-50 text-blue-600 animate-spin' },
     detected: { label: 'Detected', icon: AlertTriangle, className: 'bg-amber-50 text-amber-600' },
     treating: { label: 'Treating', icon: Clock, className: 'bg-indigo-50 text-indigo-600' },
-    resolved: { label: 'Resolved', icon: CheckCircle2, className: 'bg-green-50 text-green-600' }
+    resolved: { label: 'Resolved', icon: CheckCircle2, className: 'bg-green-50 text-green-600' },
+    failed: { label: 'Failed', icon: AlertTriangle, className: 'bg-red-50 text-red-600' },
   };
   const config = configs[status] || configs.processing;
   const Icon = config.icon;
@@ -781,7 +782,7 @@ const DiagnosisPage = () => {
                   <div key={i} className={`flex items-center gap-4 p-5 rounded-[2rem] border transition-all ${step.isCompleted ? 'bg-green-50/50 border-green-100 opacity-75' : 'bg-gray-50/50 border-gray-100'}`}>
                     <button 
                       onClick={() => toggleTaskMutation.mutate(step._id)}
-                      disabled={toggleTaskMutation.isPending}
+                      disabled={toggleTaskMutation.isPending || treatmentReport.status === 'resolved'}
                       className={`h-8 w-8 rounded-xl border-2 flex items-center justify-center transition-all ${step.isCompleted ? 'bg-green-500 border-green-500 text-white' : 'bg-white border-gray-200 hover:border-primary'}`}
                     >
                       {step.isCompleted && <CheckCircle2 className="h-5 w-5" />}
@@ -810,20 +811,24 @@ const DiagnosisPage = () => {
               )}
 
               <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100">
-                <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-4">Official Case Status</h4>
-                <div className="flex gap-2">
-                  {['detected', 'treating', 'resolved'].map((s) => (
-                    <Button 
-                      key={s}
-                      onClick={() => updateStatusMutation.mutate(s)}
-                      disabled={updateStatusMutation.isPending || treatmentReport.status === s}
-                      variant={treatmentReport.status === s ? 'default' : 'outline'}
-                      className="flex-1 rounded-2xl text-[10px] font-black uppercase h-12"
-                    >
-                      Mark as {s}
-                    </Button>
-                  ))}
-                </div>
+                <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Case Status</h4>
+                <p className="text-xs font-bold text-indigo-700/80 mb-4">
+                  Status updates automatically: <span className="font-black">Detected</span> → <span className="font-black">Treating</span> when you tick any checklist item. Mark as resolved only when the crop has fully recovered.
+                </p>
+
+                {treatmentReport.status !== 'resolved' ? (
+                  <Button
+                    onClick={() => updateStatusMutation.mutate('resolved')}
+                    disabled={updateStatusMutation.isPending || treatmentReport.status === 'processing'}
+                    className="w-full rounded-2xl text-[10px] font-black uppercase h-12"
+                  >
+                    Mark as resolved
+                  </Button>
+                ) : (
+                  <div className="text-xs font-black text-green-700 bg-green-50 border border-green-100 rounded-2xl p-3 text-center">
+                    ✓ This case is resolved
+                  </div>
+                )}
               </div>
             </div>
 
