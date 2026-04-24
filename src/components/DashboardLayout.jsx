@@ -242,12 +242,22 @@ const DashboardLayout = ({ children }) => {
               )}
             </div>
 
-            <button className="p-2 text-gray-400 hover:text-primary hover:bg-gray-50 rounded-xl transition-all">
+            <button 
+              onClick={() => navigate('/profile')}
+              className={cn(
+                "p-2 rounded-xl transition-all",
+                location.pathname === '/profile' ? "bg-primary/10 text-primary" : "text-gray-400 hover:text-primary hover:bg-gray-50"
+              )}
+            >
               <Settings className="h-6 w-6" />
             </button>
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary font-bold">
-              {user?.firstName?.charAt(0) || 'U'}
-            </div>
+            <Link to="/profile" className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary font-bold hover:bg-primary/20 transition-all overflow-hidden">
+              {user?.profilePicture ? (
+                <img src={user.profilePicture} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                user?.firstName?.charAt(0) || 'U'
+              )}
+            </Link>
           </div>
         </header>
 

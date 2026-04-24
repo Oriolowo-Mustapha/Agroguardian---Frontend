@@ -4,6 +4,7 @@ import { CreditCard } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
 import GoogleAuthCallbackPage from './pages/GoogleAuthCallbackPage';
 import DashboardOverview from './pages/DashboardOverview';
 import FarmsPage from './pages/FarmsPage';
@@ -75,7 +76,19 @@ function App() {
             path="/dashboard" 
             element={
               <ProtectedRoute>
-                <DashboardOverview />
+                <DashboardLayout>
+                  <DashboardOverview />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ProfilePage />
+                </DashboardLayout>
               </ProtectedRoute>
             } 
           />

@@ -28,6 +28,7 @@ const useAuthStore = create((set) => ({
   },
 
   setUser: (user) => set({ user }),
+  updateUser: (data) => set((state) => ({ user: { ...state.user, ...data } })),
 }));
 
 export default useAuthStore;

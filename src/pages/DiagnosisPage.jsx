@@ -339,7 +339,7 @@ const DiagnosisPage = () => {
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{report.cropType}</span>
-                              {report.urgency && (
+                              {report.urgency && report.status !== 'resolved' && (
                                 <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
                                   report.urgency === 'immediate' ? 'bg-red-100 text-red-700 animate-pulse' :
                                   report.urgency === 'within_24h' ? 'bg-amber-100 text-amber-700' :
@@ -350,7 +350,7 @@ const DiagnosisPage = () => {
                             <h4 className="text-2xl font-black text-gray-900 tracking-tight mb-2">{report.diagnosis}</h4>
                             <div className="flex items-center gap-2">
                               <StatusBadge status={report.status} />
-                              {report.spreadRisk === 'high' && (
+                              {report.spreadRisk === 'high' && report.status !== 'resolved' && (
                                 <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider bg-rose-100 text-rose-700">⚠️ High Spread Risk</span>
                               )}
                             </div>
@@ -418,13 +418,13 @@ const DiagnosisPage = () => {
             <div className="grid grid-cols-2 gap-6">
               <div><span className="block text-3xl font-black">{reports.length}</span><span className="text-[10px] font-bold text-indigo-100 uppercase tracking-wider">Total Scans</span></div>
               <div><span className="block text-3xl font-black">{reports.filter(d => d.status === 'resolved').length}</span><span className="text-[10px] font-bold text-indigo-100 uppercase tracking-wider">Resolved</span></div>
-              <div><span className="block text-3xl font-black">{reports.filter(d => d.urgency === 'immediate' || d.urgency === 'within_24h').length}</span><span className="text-[10px] font-bold text-indigo-100 uppercase tracking-wider">Urgent</span></div>
-              <div><span className="block text-3xl font-black">{reports.filter(d => d.severity === 'critical' || d.severity === 'high').length}</span><span className="text-[10px] font-bold text-indigo-100 uppercase tracking-wider">High Risk</span></div>
+              <div><span className="block text-3xl font-black">{reports.filter(d => d.status !== 'resolved' && (d.urgency === 'immediate' || d.urgency === 'within_24h')).length}</span><span className="text-[10px] font-bold text-indigo-100 uppercase tracking-wider">Urgent</span></div>
+              <div><span className="block text-3xl font-black">{reports.filter(d => d.status !== 'resolved' && (d.severity === 'critical' || d.severity === 'high')).length}</span><span className="text-[10px] font-bold text-indigo-100 uppercase tracking-wider">High Risk</span></div>
             </div>
           </Card>
           
           {/* Urgency Overview */}
-          {reports.some(r => r.urgency === 'immediate') && (
+          {reports.some(r => r.status !== 'resolved' && r.urgency === 'immediate') && (
             <Card className="border-none shadow-sm rounded-[2.5rem] bg-red-50 border-2 border-red-200 p-6">
               <div className="flex items-center gap-3 mb-3">
                 <div className="p-2 rounded-xl bg-red-100">
@@ -433,7 +433,7 @@ const DiagnosisPage = () => {
                 <h4 className="text-xs font-black text-red-800 uppercase tracking-widest">Immediate Attention</h4>
               </div>
               <div className="space-y-2">
-                {reports.filter(r => r.urgency === 'immediate').slice(0, 3).map(r => (
+                {reports.filter(r => r.status !== 'resolved' && r.urgency === 'immediate').slice(0, 3).map(r => (
                   <div key={r._id} onClick={() => setSelectedReport(r)} className="bg-white p-3 rounded-xl border border-red-100 cursor-pointer hover:bg-red-50 transition-colors">
                     <p className="text-sm font-bold text-gray-900">{r.diagnosis}</p>
                     <p className="text-[10px] text-gray-500">{r.cropType}</p>
