@@ -76,9 +76,7 @@ function App() {
             path="/dashboard" 
             element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <DashboardOverview />
-                </DashboardLayout>
+                <DashboardOverview />
               </ProtectedRoute>
             } 
           />
@@ -86,9 +84,7 @@ function App() {
             path="/profile" 
             element={
               <ProtectedRoute>
-                <DashboardLayout>
-                  <ProfilePage />
-                </DashboardLayout>
+                <ProfilePage />
               </ProtectedRoute>
             } 
           />
