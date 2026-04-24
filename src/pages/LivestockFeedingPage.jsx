@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useNavigateBack } from '../hooks/useNavigateBack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -37,7 +37,7 @@ export default function LivestockFeedingPage() {
 
   const [scheduleLivestockId, setScheduleLivestockId] = useState('');
   const [selectedFeedingRecordId, setSelectedFeedingRecordId] = useState('');
-  const [scheduleTimeInput, setScheduleTimeInput] = useState(new Date().toTimeString().slice(0, 5));
+  const [scheduleTimeInput, setScheduleTimeInput] = useState('');
   const [scheduleTimes, setScheduleTimes] = useState([]);
   const [scheduleDays, setScheduleDays] = useState([0, 1, 2, 3, 4, 5, 6]);
   const [scheduleTimezone, setScheduleTimezone] = useState('Africa/Lagos');
@@ -82,15 +82,34 @@ export default function LivestockFeedingPage() {
 
   const feedingRecords = feedingData?.data || [];
 
+  const [nowMs, setNowMs] = useState(null);
+  useEffect(() => {
+    const update = () => setNowMs(Date.now());
+
+    const timeoutId = setTimeout(update, 0);
+    const intervalId = setInterval(update, 60 * 1000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const openSchedulesModal = () => {
+    setScheduleTimeInput(new Date().toTimeString().slice(0, 5));
+    setShowSchedulesModal(true);
+  };
+
   // Helper to find active stock
   const activeRecords = useMemo(() => {
-    const now = Date.now();
+    if (nowMs == null) return [];
+
     return feedingRecords.filter(r => {
       const start = new Date(r.feedingTime).getTime();
       const durationMs = (r.intendedDurationDays || 1) * 24 * 60 * 60 * 1000;
-      return now < (start + durationMs);
+      return nowMs < (start + durationMs);
     });
-  }, [feedingRecords]);
+  }, [feedingRecords, nowMs]);
 
   // Fetch consumption stats
   const { data: statsData } = useQuery({
@@ -226,7 +245,7 @@ export default function LivestockFeedingPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowSchedulesModal(true)}
+            onClick={openSchedulesModal}
             className="flex items-center gap-2 bg-white text-gray-700 border px-4 py-2 rounded-lg hover:bg-gray-50"
           >
             <Clock className="w-4 h-4" />
