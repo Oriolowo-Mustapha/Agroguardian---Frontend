@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useNavigateBack } from '../hooks/useNavigateBack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -83,11 +83,14 @@ export default function LivestockFeedingPage() {
   const feedingRecords = feedingData?.data || [];
 
   // Helper to find active stock
-  const activeRecords = feedingRecords.filter(r => {
-    const start = new Date(r.feedingTime).getTime();
-    const durationMs = (r.intendedDurationDays || 1) * 24 * 60 * 60 * 1000;
-    return Date.now() < (start + durationMs);
-  });
+  const activeRecords = useMemo(() => {
+    const now = Date.now();
+    return feedingRecords.filter(r => {
+      const start = new Date(r.feedingTime).getTime();
+      const durationMs = (r.intendedDurationDays || 1) * 24 * 60 * 60 * 1000;
+      return now < (start + durationMs);
+    });
+  }, [feedingRecords]);
 
   // Fetch consumption stats
   const { data: statsData } = useQuery({
