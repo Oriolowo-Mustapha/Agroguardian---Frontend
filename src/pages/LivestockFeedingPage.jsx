@@ -183,7 +183,6 @@ export default function LivestockFeedingPage() {
       totalCost,
       notes: formData.get('notes') || undefined,
       intendedDurationDays,
-      scheduleType: formData.get('scheduleType'),
     };
 
     addFeeding.mutate(data);
