@@ -166,19 +166,7 @@ export default function LivestockFeedingPage() {
     const formData = new FormData(e.target);
 
     const livestockId = formData.get('livestockId') || undefined;
-    const feedingTimeInput = formData.get('feedingTime');
-
-    // UI collects time-only (HH:mm). Backend expects a Date/ISO string.
-    let feedingTime = new Date().toISOString();
-    if (typeof feedingTimeInput === 'string' && /^\d{2}:\d{2}$/.test(feedingTimeInput)) {
-      const now = new Date();
-      const [hh, mm] = feedingTimeInput.split(':').map(Number);
-      const dt = new Date(now);
-      dt.setHours(hh, mm, 0, 0);
-      feedingTime = dt.toISOString();
-    } else if (typeof feedingTimeInput === 'string' && feedingTimeInput.trim()) {
-      feedingTime = feedingTimeInput;
-    }
+    const intendedDurationDays = parseInt(formData.get('duration') || '1', 10);
 
     const totalCostRaw = formData.get('cost');
     const totalCost = typeof totalCostRaw === 'string' && totalCostRaw.trim().length
@@ -194,7 +182,7 @@ export default function LivestockFeedingPage() {
       unit: formData.get('unit'),
       totalCost,
       notes: formData.get('notes') || undefined,
-      feedingTime,
+      intendedDurationDays,
     };
 
     addFeeding.mutate(data);
@@ -656,14 +644,15 @@ export default function LivestockFeedingPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Feeding Time
+                  Intended For (Duration)
                 </label>
-                <input
-                  type="time"
-                  name="feedingTime"
-                  defaultValue={new Date().toTimeString().slice(0, 5)}
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+                <select name="duration" className="w-full border rounded-lg px-3 py-2">
+                  <option value="1">Today only</option>
+                  <option value="7">A week</option>
+                  <option value="14">2 weeks</option>
+                  <option value="30">30 days</option>
+                  <option value="90">90 days</option>
+                </select>
               </div>
 
               <div>
