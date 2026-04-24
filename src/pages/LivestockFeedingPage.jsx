@@ -36,10 +36,18 @@ export default function LivestockFeedingPage() {
   const [filterDays, setFilterDays] = useState(30);
 
   const [scheduleLivestockId, setScheduleLivestockId] = useState('');
+  const [selectedFeedingRecordId, setSelectedFeedingRecordId] = useState('');
   const [scheduleTimeInput, setScheduleTimeInput] = useState(new Date().toTimeString().slice(0, 5));
   const [scheduleTimes, setScheduleTimes] = useState([]);
   const [scheduleDays, setScheduleDays] = useState([0, 1, 2, 3, 4, 5, 6]);
   const [scheduleTimezone, setScheduleTimezone] = useState('Africa/Lagos');
+
+  // Helper to find active stock
+  const activeRecords = feedingRecords.filter(r => {
+    const start = new Date(r.feedingTime).getTime();
+    const durationMs = (r.intendedDurationDays || 1) * 24 * 60 * 60 * 1000;
+    return Date.now() < (start + durationMs);
+  });
 
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const formatDays = (days) => (Array.isArray(days) && days.length ? days.map((d) => dayLabels[d] ?? d).join(', ') : 'Daily');
@@ -406,6 +414,22 @@ export default function LivestockFeedingPage() {
                   </div>
 
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Active Feed Stock (Optional)</label>
+                    <select
+                      value={selectedFeedingRecordId}
+                      onChange={(e) => setSelectedFeedingRecordId(e.target.value)}
+                      className="w-full border rounded-lg px-3 py-2"
+                    >
+                      <option value="">Manual feed details</option>
+                      {activeRecords.map((r) => (
+                        <option key={r._id} value={r._id}>
+                          {r.feedBrand || r.feedType} ({r.quantity}{r.unit}) - Logged {new Date(r.feedingTime).toLocaleDateString()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
                     <input
                       value={scheduleTimezone}
@@ -483,6 +507,7 @@ export default function LivestockFeedingPage() {
                     onClick={() => {
                       const payload = {
                         livestockId: scheduleLivestockId || undefined,
+                        feedingRecordId: selectedFeedingRecordId || undefined,
                         timesOfDay: scheduleTimes,
                         daysOfWeek: scheduleDays.length === 7 ? undefined : scheduleDays,
                         timezone: scheduleTimezone || undefined,
