@@ -183,6 +183,7 @@ export default function LivestockFeedingPage() {
       totalCost,
       notes: formData.get('notes') || undefined,
       intendedDurationDays,
+      scheduleType: formData.get('scheduleType'),
     };
 
     addFeeding.mutate(data);
@@ -640,6 +641,19 @@ export default function LivestockFeedingPage() {
                   name="cost"
                   className="w-full border rounded-lg px-3 py-2"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Time of Day
+                </label>
+                <select name="scheduleType" className="w-full border rounded-lg px-3 py-2">
+                  <option value="">Specific occurrence</option>
+                  <option value="morning">Morning</option>
+                  <option value="afternoon">Afternoon</option>
+                  <option value="evening">Evening</option>
+                  <option value="ad_libitum">Ad libitum</option>
+                </select>
               </div>
 
               <div>
