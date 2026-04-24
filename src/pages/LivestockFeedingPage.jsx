@@ -42,13 +42,6 @@ export default function LivestockFeedingPage() {
   const [scheduleDays, setScheduleDays] = useState([0, 1, 2, 3, 4, 5, 6]);
   const [scheduleTimezone, setScheduleTimezone] = useState('Africa/Lagos');
 
-  // Helper to find active stock
-  const activeRecords = feedingRecords.filter(r => {
-    const start = new Date(r.feedingTime).getTime();
-    const durationMs = (r.intendedDurationDays || 1) * 24 * 60 * 60 * 1000;
-    return Date.now() < (start + durationMs);
-  });
-
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const formatDays = (days) => (Array.isArray(days) && days.length ? days.map((d) => dayLabels[d] ?? d).join(', ') : 'Daily');
 
@@ -88,6 +81,13 @@ export default function LivestockFeedingPage() {
   });
 
   const feedingRecords = feedingData?.data || [];
+
+  // Helper to find active stock
+  const activeRecords = feedingRecords.filter(r => {
+    const start = new Date(r.feedingTime).getTime();
+    const durationMs = (r.intendedDurationDays || 1) * 24 * 60 * 60 * 1000;
+    return Date.now() < (start + durationMs);
+  });
 
   // Fetch consumption stats
   const { data: statsData } = useQuery({
