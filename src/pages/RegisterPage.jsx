@@ -207,7 +207,7 @@ const RegisterPage = () => {
             variant="outline"
             className="w-full border-gray-200 hover:bg-gray-50"
             onClick={() => {
-              const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+              const apiBase = import.meta.env.VITE_API_URL || 'https://agroguardian-ai.onrender.com/api';
               const redirect = `${window.location.origin}/auth/google/callback`;
               window.location.href = `${apiBase}/auth/google?redirect=${encodeURIComponent(redirect)}`;
             }}
