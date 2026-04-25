@@ -1,7 +1,7 @@
 // Build: 2026-04-01-1800
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useNavigateBack } from '../hooks/useNavigateBack';
 import { 
   Stethoscope,
@@ -99,6 +99,7 @@ const DiagnosisPage = () => {
   
   const queryClient = useQueryClient();
   const goBack = useNavigateBack('/dashboard');
+  const navigate = useNavigate();
 
   const { data: farms, isLoading: isLoadingFarms } = useQuery({
     queryKey: ['farms'],
@@ -310,6 +311,13 @@ const DiagnosisPage = () => {
           <Button onClick={() => setIsConsultationOpen(true)} disabled={!farmId} variant="outline" className="flex-1 lg:flex-none rounded-2xl px-6 h-14 font-black border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:scale-105 transition-transform">
             <Bot className="mr-2 h-5 w-5" /> Ask AI
           </Button>
+          <Button
+            onClick={() => navigate(farmId ? `/crop-consultation?farmId=${farmId}` : '/crop-consultation')}
+            variant="outline"
+            className="flex-1 lg:flex-none rounded-2xl px-6 h-14 font-black border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:scale-105 transition-transform"
+          >
+            <MessageSquare className="mr-2 h-5 w-5" /> Consultations
+          </Button>
           <Button onClick={goBack} variant="outline" className="flex-1 lg:flex-none rounded-2xl px-6 h-14 font-bold border-gray-200 hover:bg-gray-50">
              <ArrowLeft className="mr-2 h-4 w-4" /> Portfolio
           </Button>
@@ -466,6 +474,14 @@ const DiagnosisPage = () => {
               className="w-full rounded-xl h-12 font-black bg-indigo-600 hover:bg-indigo-700"
             >
               <MessageSquare className="mr-2 h-4 w-4" /> New Consultation
+            </Button>
+
+            <Button
+              onClick={() => navigate(farmId ? `/crop-consultation?farmId=${farmId}` : '/crop-consultation')}
+              variant="outline"
+              className="w-full rounded-xl h-12 font-black border-indigo-200 text-indigo-600 hover:bg-indigo-50 mt-3"
+            >
+              <MessageSquare className="mr-2 h-4 w-4" /> View All Chats
             </Button>
           </Card>
 
