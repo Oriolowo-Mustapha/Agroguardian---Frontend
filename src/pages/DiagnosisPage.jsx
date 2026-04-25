@@ -1,7 +1,7 @@
 // Build: 2026-04-01-1800
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useNavigateBack } from '../hooks/useNavigateBack';
 import { 
   Stethoscope,
@@ -474,9 +474,17 @@ const DiagnosisPage = () => {
             <Card className="border-none shadow-sm rounded-[2.5rem] p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest">Past Consultations</h4>
-                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-                  {consultations.length}
-                </span>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={farmId ? `/crop-consultation?farmId=${farmId}` : '/crop-consultation'}
+                    className="text-[10px] font-bold text-indigo-600 hover:underline"
+                  >
+                    View all
+                  </Link>
+                  <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                    {consultations.length}
+                  </span>
+                </div>
               </div>
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {consultations.slice(0, 10).map((consultation) => (

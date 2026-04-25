@@ -22,6 +22,7 @@ import LivestockFeedingPage from './pages/LivestockFeedingPage';
 import LivestockBreedingPage from './pages/LivestockBreedingPage';
 import LivestockInventoryPage from './pages/LivestockInventoryPage';
 import VetConsultationPage from './pages/VetConsultationPage';
+import CropConsultationPage from './pages/CropConsultationPage';
 import DashboardLayout from './components/DashboardLayout';
 import { Button } from './components/ui/Button';
 import useAuthStore from './store/authStore';
@@ -208,6 +209,14 @@ function App() {
                 <VetConsultationPage />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/crop-consultation"
+            element={
+              <ProtectedRoute>
+                <CropConsultationPage />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </Router>
