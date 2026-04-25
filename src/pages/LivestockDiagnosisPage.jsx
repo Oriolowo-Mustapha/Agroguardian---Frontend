@@ -81,6 +81,32 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+const humanizeEnum = (value) => {
+  if (!value) return '';
+  return String(value)
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
+const getLivestockLabel = (diagnosis) => {
+  const l = diagnosis?.livestockId;
+  if (!l) return diagnosis?.animalDescription || 'Unknown';
+
+  const primary = l?.name || l?.tagId;
+  if (primary) return primary;
+
+  const isBatch = l?.trackingType === 'batch' || (diagnosis?.batchSize || 0) > 1;
+  if (isBatch) {
+    const batchBase =
+      l?.batchId ? `Batch ${l.batchId}` : l?.poultryType ? `${humanizeEnum(l.poultryType)} batch` : 'Batch';
+    const size = typeof l?.quantity === 'number' ? l.quantity : diagnosis?.batchSize;
+    const sizeLabel = typeof size === 'number' && size > 1 ? ` (${size})` : '';
+    return `${batchBase}${sizeLabel}`;
+  }
+
+  return 'Animal';
+};
+
 const DiagnosisCard = ({ diagnosis, onClick }) => {
   const SpeciesIcon = speciesIcons[diagnosis.livestockId?.species] || PawPrint;
   
@@ -113,7 +139,7 @@ const DiagnosisCard = ({ diagnosis, onClick }) => {
                 {diagnosis.diagnosis}
               </h3>
               <p className="text-sm text-gray-500">
-                {diagnosis.livestockId?.name || diagnosis.livestockId?.tagId || 'Unknown'} • {diagnosis.livestockId?.species}
+                {getLivestockLabel(diagnosis)} • {diagnosis.livestockId?.species || diagnosis.species || 'Unknown'}
               </p>
             </div>
             <div className="flex flex-col gap-1 items-end">
@@ -223,7 +249,7 @@ const DiagnosisDetailsModal = ({ isOpen, onClose, diagnosisId, initialDiagnosis,
             <div className="min-w-0">
               <h2 className="text-xl font-bold text-gray-900 truncate">Diagnosis Details</h2>
               <p className="text-sm text-gray-500 truncate">
-                {d?.livestockId?.name || d?.livestockId?.tagId || 'Unknown'} • {d?.livestockId?.species || d?.species || 'Unknown'}
+                {getLivestockLabel(d)} • {d?.livestockId?.species || d?.species || 'Unknown'}
               </p>
             </div>
           </div>
