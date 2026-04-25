@@ -123,17 +123,30 @@ export default function LivestockFeedingPage() {
 
   const stats = statsData?.data || {};
 
-  // Fetch feeding schedules (load when modal opens)
+  // Fetch feeding schedules (used for dashboard counts + modal)
   const { data: schedulesData, isLoading: schedulesLoading } = useQuery({
     queryKey: ['feeding-schedules', selectedFarm?._id],
     queryFn: async () => {
       const res = await api.get(`/livestock-management/farms/${selectedFarm._id}/feeding/schedules`);
       return res.data;
     },
-    enabled: !!selectedFarm?._id && showSchedulesModal,
+    enabled: !!selectedFarm?._id,
   });
 
   const feedingSchedules = schedulesData?.data || [];
+
+  const scheduleCounts = useMemo(() => {
+    const total = Array.isArray(feedingSchedules) ? feedingSchedules.length : 0;
+    const active = Array.isArray(feedingSchedules)
+      ? feedingSchedules.filter((s) => Boolean(s?.enabled)).length
+      : 0;
+
+    return {
+      total,
+      active,
+      disabled: Math.max(0, total - active),
+    };
+  }, [feedingSchedules]);
 
   const addSchedule = useMutation({
     mutationFn: async (payload) => {
@@ -262,7 +275,7 @@ export default function LivestockFeedingPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-100 rounded-lg">
@@ -307,6 +320,37 @@ export default function LivestockFeedingPage() {
             <div>
               <p className="text-sm text-gray-500">Total Cost</p>
               <p className="text-xl font-bold">₦{stats.totalCost?.toLocaleString() || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Clock className="w-5 h-5 text-gray-700" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-gray-500">Feeding Schedules</p>
+              <div className="mt-1 grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-[11px] text-gray-500">Available</p>
+                  <p className="text-lg font-bold">
+                    {schedulesLoading && feedingSchedules.length === 0 ? '—' : scheduleCounts.total}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500">Active</p>
+                  <p className="text-lg font-bold text-green-700">
+                    {schedulesLoading && feedingSchedules.length === 0 ? '—' : scheduleCounts.active}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500">Disabled</p>
+                  <p className="text-lg font-bold text-gray-700">
+                    {schedulesLoading && feedingSchedules.length === 0 ? '—' : scheduleCounts.disabled}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
