@@ -162,7 +162,7 @@ export default function CropConsultationPage() {
   }, [farmSeasons, newConsultationForm.cropId, newConsultationForm.cropName]);
 
   const { data: consultationsData, isLoading: loadingConsultations } = useQuery({
-    queryKey: ['crop-consultations', selectedFarm?._id],
+    queryKey: ['consultations', selectedFarm?._id],
     queryFn: async () => {
       const res = await api.get(`/consultations/farm/${selectedFarm._id}`);
       return res.data;
@@ -180,16 +180,16 @@ export default function CropConsultationPage() {
   }, [activeConsultation, consultations, showNewConsultation]);
 
   const { data: activeConsultationData, isLoading: loadingActive } = useQuery({
-    queryKey: ['crop-consultation', activeConsultation],
+    queryKey: ['consultation', activeConsultation],
     queryFn: async () => {
       const res = await api.get(`/consultations/${activeConsultation}`);
-      return res.data;
+      return res.data.data;
     },
     enabled: !!activeConsultation,
     refetchInterval: 5000
   });
 
-  const consultation = activeConsultationData?.data;
+  const consultation = activeConsultationData;
 
   useEffect(() => {
     if (!consultation?.messages) return;
@@ -230,9 +230,8 @@ export default function CropConsultationPage() {
       setIsListOpen(false);
       clearSelectedImages();
       setNewConsultationForm({ cropName: '', cropId: '', seasonId: '', message: '' });
-      queryClient.invalidateQueries(['crop-consultations']);
       queryClient.invalidateQueries(['consultations']);
-      if (created?._id) queryClient.invalidateQueries(['crop-consultation', created._id]);
+      if (created?._id) queryClient.invalidateQueries(['consultation', created._id]);
     }
   });
 
@@ -250,9 +249,8 @@ export default function CropConsultationPage() {
     onSuccess: () => {
       setNewMessage('');
       clearSelectedImages();
-      queryClient.invalidateQueries(['crop-consultation', activeConsultation]);
-      queryClient.invalidateQueries(['crop-consultations']);
       queryClient.invalidateQueries(['consultations']);
+      queryClient.invalidateQueries(['consultation', activeConsultation]);
     }
   });
 

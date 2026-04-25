@@ -169,6 +169,7 @@ export default function ConsultationChat({
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['consultation', consultationId]);
+      queryClient.invalidateQueries(['consultations']);
       setMessage('');
       setImages([]);
     },
