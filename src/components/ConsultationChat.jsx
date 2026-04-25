@@ -307,12 +307,19 @@ export default function ConsultationChat({
             {(() => {
               const selectedCropName = typeof selectedCrop === 'object' ? selectedCrop.name : selectedCrop;
               const selectedCropId = typeof selectedCrop === 'object' ? selectedCrop._id : null;
-              const filteredSeasons = seasons.filter(s => 
-                s.cropId === selectedCropId || 
-                s.crop?._id === selectedCropId ||
-                s.cropName === selectedCropName ||
-                s.crop?.name === selectedCropName
-              );
+              const filteredSeasons = seasons.filter(s => {
+                const seasonCropId = s.cropId?._id || s.cropId || s.crop?._id || s.crop;
+                if (selectedCropId && String(seasonCropId || '') === String(selectedCropId)) return true;
+                
+                const seasonCropName = String(
+                  s.cropName || 
+                  s.crop?.name || 
+                  (typeof s.cropId === 'object' ? s.cropId?.name : '') || 
+                  ''
+                ).trim().toLowerCase();
+                
+                return selectedCropName && seasonCropName === selectedCropName.toLowerCase();
+              });
               
               return filteredSeasons.length > 0 && selectedCrop && (
                 <div>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -133,6 +133,33 @@ export default function CropConsultationPage() {
     },
     enabled: !!selectedFarm?._id
   });
+
+  const seasonsForSelectedCrop = useMemo(() => {
+    const cropId = newConsultationForm.cropId;
+    const cropName = String(newConsultationForm.cropName || '').trim().toLowerCase();
+
+    if (cropId) {
+      return farmSeasons.filter((s) => {
+        const seasonCropId = s.cropId?._id || s.cropId || s.crop?._id || s.crop;
+        return String(seasonCropId || '') === String(cropId);
+      });
+    }
+
+    if (cropName) {
+      return farmSeasons.filter((s) => {
+        const seasonCropName = String(
+          s.cropName || 
+          s.crop?.name || 
+          (typeof s.cropId === 'object' ? s.cropId?.name : '') || 
+          ''
+        ).trim().toLowerCase();
+        return seasonCropName === cropName;
+      });
+    }
+
+    // Don't show seasons until user selects/enters a crop
+    return [];
+  }, [farmSeasons, newConsultationForm.cropId, newConsultationForm.cropName]);
 
   const { data: consultationsData, isLoading: loadingConsultations } = useQuery({
     queryKey: ['crop-consultations', selectedFarm?._id],
@@ -442,7 +469,8 @@ export default function CropConsultationPage() {
                         setNewConsultationForm((prev) => ({
                           ...prev,
                           cropId: id,
-                          cropName: crop?.name || prev.cropName
+                          cropName: crop?.name || prev.cropName,
+                          seasonId: ''
                         }));
                       }}
                       className="w-full border rounded-lg px-3 py-2"
@@ -456,7 +484,14 @@ export default function CropConsultationPage() {
                     </select>
                     <input
                       value={newConsultationForm.cropName}
-                      onChange={(e) => setNewConsultationForm((prev) => ({ ...prev, cropName: e.target.value }))}
+                      onChange={(e) =>
+                        setNewConsultationForm((prev) => ({
+                          ...prev,
+                          cropName: e.target.value,
+                          cropId: '',
+                          seasonId: ''
+                        }))
+                      }
                       placeholder="Crop name (required)"
                       className="w-full border rounded-lg px-3 py-2 mt-2"
                     />
@@ -468,11 +503,12 @@ export default function CropConsultationPage() {
                       value={newConsultationForm.seasonId}
                       onChange={(e) => setNewConsultationForm((prev) => ({ ...prev, seasonId: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2"
+                      disabled={seasonsForSelectedCrop.length === 0}
                     >
-                      <option value="">No season selected</option>
-                      {farmSeasons.map((s) => (
+                      <option value="">{seasonsForSelectedCrop.length === 0 ? 'Select crop to load seasons' : 'No season selected'}</option>
+                      {seasonsForSelectedCrop.map((s) => (
                         <option key={s._id} value={s._id}>
-                          {s.name || `${s.cropName || 'Season'} (${new Date(s.plantedDate).toLocaleDateString()})`}
+                          {s.name || `${s.cropId?.name || s.cropName || 'Season'} (${new Date(s.plantedDate).toLocaleDateString()})`}
                         </option>
                       ))}
                     </select>
