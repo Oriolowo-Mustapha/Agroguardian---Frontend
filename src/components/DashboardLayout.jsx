@@ -84,7 +84,42 @@ const DashboardLayout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { logout, user } = useAuthStore();
+  const { logout, user, setUser, isAuthenticated } = useAuthStore();
+  const [avatarImgError, setAvatarImgError] = React.useState(false);
+
+  const avatarInitial = (() => {
+    const first = user?.firstName?.trim?.();
+    if (first) return first.charAt(0).toUpperCase();
+
+    const last = user?.lastName?.trim?.();
+    if (last) return last.charAt(0).toUpperCase();
+
+    const email = user?.email?.trim?.();
+    if (email) return email.charAt(0).toUpperCase();
+
+    return 'U';
+  })();
+
+  const avatarSrc = !avatarImgError ? user?.profilePicture : null;
+
+  React.useEffect(() => {
+    if (!isAuthenticated || user) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await api.get('/auth/profile');
+        const data = res.data?.data;
+        if (!cancelled && data) setUser(data);
+      } catch {
+        // ignore; token refresh interceptor will redirect on auth failure
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user, setUser]);
 
   const { data: notifications } = useQuery({
     queryKey: ['notifications'],
@@ -252,10 +287,15 @@ const DashboardLayout = ({ children }) => {
               <Settings className="h-6 w-6" />
             </button>
             <Link to="/profile" className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 text-primary font-bold hover:bg-primary/20 transition-all overflow-hidden">
-              {user?.profilePicture ? (
-                <img src={user.profilePicture} alt="Avatar" className="h-full w-full object-cover" />
+              {avatarSrc ? (
+                <img
+                  src={avatarSrc}
+                  alt="Avatar"
+                  className="h-full w-full object-cover"
+                  onError={() => setAvatarImgError(true)}
+                />
               ) : (
-                user?.firstName?.charAt(0) || 'U'
+                avatarInitial
               )}
             </Link>
           </div>

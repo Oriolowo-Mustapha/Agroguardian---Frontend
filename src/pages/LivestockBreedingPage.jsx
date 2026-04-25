@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useLocation, useSearchParams, Link } from 'react-router-dom';
 import { useNavigateBack } from '../hooks/useNavigateBack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -280,13 +280,13 @@ export default function LivestockBreedingPage() {
     }
   });
 
-  const computeFemaleEligibility = (femaleId) => {
+  const computeFemaleEligibility = useCallback((femaleId) => {
     if (!femaleId) return { eligible: true };
 
     const COOLDOWN_DAYS = 60;
     const damRecords = (breedingAllRecords || [])
       .filter((r) => (r?.damId?._id || r?.damId) === femaleId)
-      .sort((a, b) => new Date(b.breedingDate || b.createdAt) - new Date(a.breedingDate || a.createdAt));
+      .sort((a, b) => new Date(b.breedingDate || b.createdAt).getTime() - new Date(a.breedingDate || a.createdAt).getTime());
 
     const active = damRecords.find(
       (r) => r?.status === 'bred' || r?.status === 'confirmed_pregnant' || r?.isPregnant === true
@@ -300,7 +300,7 @@ export default function LivestockBreedingPage() {
 
     const lastDelivered = damRecords
       .filter((r) => r?.status === 'delivered' && r?.birthDate)
-      .sort((a, b) => new Date(b.birthDate) - new Date(a.birthDate))[0];
+      .sort((a, b) => new Date(b.birthDate).getTime() - new Date(a.birthDate).getTime())[0];
 
     if (lastDelivered?.birthDate) {
       const birth = new Date(lastDelivered.birthDate);
@@ -317,9 +317,12 @@ export default function LivestockBreedingPage() {
     }
 
     return { eligible: true };
-  };
+  }, [breedingAllRecords]);
 
-  const femaleEligibility = computeFemaleEligibility(selectedFemaleId || prefillFemaleId || '');
+  const femaleEligibility = useMemo(
+    () => computeFemaleEligibility(selectedFemaleId || prefillFemaleId || ''),
+    [computeFemaleEligibility, selectedFemaleId, prefillFemaleId]
+  );
 
   const handleAddBreeding = (e) => {
     e.preventDefault();

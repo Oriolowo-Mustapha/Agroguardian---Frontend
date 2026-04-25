@@ -129,6 +129,7 @@ const InfoRow = ({ label, value, icon: Icon, onEdit, isLocked }) => (
 const ProfilePage = () => {
   const { user: storeUser, updateUser: updateStoreUser } = useAuthStore();
   const [modalConfig, setModalConfig] = React.useState({ isOpen: false, field: '', label: '', initialValue: '' });
+  const [avatarImgError, setAvatarImgError] = React.useState(false);
 
   const { data: user, isLoading, isError } = useQuery({
     queryKey: ['profile'],
@@ -178,10 +179,15 @@ const ProfilePage = () => {
         
         <div className="h-32 w-32 rounded-[2.5rem] bg-gradient-to-br from-indigo-500 to-primary p-1 shadow-2xl relative group cursor-pointer">
           <div className="bg-white h-full w-full rounded-[2.25rem] flex items-center justify-center overflow-hidden">
-            {user?.profilePicture ? (
-                <img src={user.profilePicture} alt="Profile" className="h-full w-full object-cover" />
+            {user?.profilePicture && !avatarImgError ? (
+                <img
+                  src={user.profilePicture}
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                  onError={() => setAvatarImgError(true)}
+                />
             ) : (
-                <span className="text-4xl font-black text-primary">{user?.firstName?.charAt(0)}</span>
+                <span className="text-4xl font-black text-primary">{(user?.firstName || user?.lastName || user?.email || 'U')?.toString?.().charAt(0).toUpperCase()}</span>
             )}
           </div>
           <div className="absolute inset-0 bg-black/40 rounded-[2.25rem] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

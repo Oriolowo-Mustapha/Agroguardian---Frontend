@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useNavigateBack } from '../hooks/useNavigateBack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -36,7 +36,8 @@ export default function LivestockFeedingPage() {
   const [filterDays, setFilterDays] = useState(30);
 
   const [scheduleLivestockId, setScheduleLivestockId] = useState('');
-  const [scheduleTimeInput, setScheduleTimeInput] = useState(new Date().toTimeString().slice(0, 5));
+  const [selectedFeedingRecordId, setSelectedFeedingRecordId] = useState('');
+  const [scheduleTimeInput, setScheduleTimeInput] = useState('');
   const [scheduleTimes, setScheduleTimes] = useState([]);
   const [scheduleDays, setScheduleDays] = useState([0, 1, 2, 3, 4, 5, 6]);
   const [scheduleTimezone, setScheduleTimezone] = useState('Africa/Lagos');
@@ -81,6 +82,35 @@ export default function LivestockFeedingPage() {
 
   const feedingRecords = feedingData?.data || [];
 
+  const [nowMs, setNowMs] = useState(null);
+  useEffect(() => {
+    const update = () => setNowMs(Date.now());
+
+    const timeoutId = setTimeout(update, 0);
+    const intervalId = setInterval(update, 60 * 1000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, []);
+
+  const openSchedulesModal = () => {
+    setScheduleTimeInput(new Date().toTimeString().slice(0, 5));
+    setShowSchedulesModal(true);
+  };
+
+  // Helper to find active stock
+  const activeRecords = useMemo(() => {
+    if (nowMs == null) return [];
+
+    return feedingRecords.filter(r => {
+      const start = new Date(r.feedingTime).getTime();
+      const durationMs = (r.intendedDurationDays || 1) * 24 * 60 * 60 * 1000;
+      return nowMs < (start + durationMs);
+    });
+  }, [feedingRecords, nowMs]);
+
   // Fetch consumption stats
   const { data: statsData } = useQuery({
     queryKey: ['feeding-stats', selectedFarm?._id],
@@ -93,17 +123,30 @@ export default function LivestockFeedingPage() {
 
   const stats = statsData?.data || {};
 
-  // Fetch feeding schedules (load when modal opens)
+  // Fetch feeding schedules (used for dashboard counts + modal)
   const { data: schedulesData, isLoading: schedulesLoading } = useQuery({
     queryKey: ['feeding-schedules', selectedFarm?._id],
     queryFn: async () => {
       const res = await api.get(`/livestock-management/farms/${selectedFarm._id}/feeding/schedules`);
       return res.data;
     },
-    enabled: !!selectedFarm?._id && showSchedulesModal,
+    enabled: !!selectedFarm?._id,
   });
 
   const feedingSchedules = schedulesData?.data || [];
+
+  const scheduleCounts = useMemo(() => {
+    const total = Array.isArray(feedingSchedules) ? feedingSchedules.length : 0;
+    const active = Array.isArray(feedingSchedules)
+      ? feedingSchedules.filter((s) => Boolean(s?.enabled)).length
+      : 0;
+
+    return {
+      total,
+      active,
+      disabled: Math.max(0, total - active),
+    };
+  }, [feedingSchedules]);
 
   const addSchedule = useMutation({
     mutationFn: async (payload) => {
@@ -215,7 +258,7 @@ export default function LivestockFeedingPage() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowSchedulesModal(true)}
+            onClick={openSchedulesModal}
             className="flex items-center gap-2 bg-white text-gray-700 border px-4 py-2 rounded-lg hover:bg-gray-50"
           >
             <Clock className="w-4 h-4" />
@@ -232,7 +275,7 @@ export default function LivestockFeedingPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-100 rounded-lg">
@@ -277,6 +320,37 @@ export default function LivestockFeedingPage() {
             <div>
               <p className="text-sm text-gray-500">Total Cost</p>
               <p className="text-xl font-bold">₦{stats.totalCost?.toLocaleString() || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-gray-100 rounded-lg">
+              <Clock className="w-5 h-5 text-gray-700" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-gray-500">Feeding Schedules</p>
+              <div className="mt-1 grid grid-cols-3 gap-3">
+                <div>
+                  <p className="text-[11px] text-gray-500">Available</p>
+                  <p className="text-lg font-bold">
+                    {schedulesLoading && feedingSchedules.length === 0 ? '—' : scheduleCounts.total}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500">Active</p>
+                  <p className="text-lg font-bold text-green-700">
+                    {schedulesLoading && feedingSchedules.length === 0 ? '—' : scheduleCounts.active}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-gray-500">Disabled</p>
+                  <p className="text-lg font-bold text-gray-700">
+                    {schedulesLoading && feedingSchedules.length === 0 ? '—' : scheduleCounts.disabled}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -406,6 +480,22 @@ export default function LivestockFeedingPage() {
                   </div>
 
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Active Feed Stock (Optional)</label>
+                    <select
+                      value={selectedFeedingRecordId}
+                      onChange={(e) => setSelectedFeedingRecordId(e.target.value)}
+                      className="w-full border rounded-lg px-3 py-2"
+                    >
+                      <option value="">Manual feed details</option>
+                      {activeRecords.map((r) => (
+                        <option key={r._id} value={r._id}>
+                          {r.feedBrand || r.feedType} ({r.quantity}{r.unit}) - Logged {new Date(r.feedingTime).toLocaleDateString()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
                     <input
                       value={scheduleTimezone}
@@ -483,6 +573,7 @@ export default function LivestockFeedingPage() {
                     onClick={() => {
                       const payload = {
                         livestockId: scheduleLivestockId || undefined,
+                        feedingRecordId: selectedFeedingRecordId || undefined,
                         timesOfDay: scheduleTimes,
                         daysOfWeek: scheduleDays.length === 7 ? undefined : scheduleDays,
                         timezone: scheduleTimezone || undefined,
@@ -640,6 +731,19 @@ export default function LivestockFeedingPage() {
                   name="cost"
                   className="w-full border rounded-lg px-3 py-2"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Time of Day
+                </label>
+                <select name="scheduleType" className="w-full border rounded-lg px-3 py-2">
+                  <option value="">Specific occurrence</option>
+                  <option value="morning">Morning</option>
+                  <option value="afternoon">Afternoon</option>
+                  <option value="evening">Evening</option>
+                  <option value="ad_libitum">Ad libitum</option>
+                </select>
               </div>
 
               <div>
