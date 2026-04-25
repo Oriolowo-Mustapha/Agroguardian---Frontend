@@ -95,27 +95,45 @@ const PracticesInventoryModal = ({ isOpen, onClose, activities, farm, farmId }) 
                     : { wrap: 'bg-gray-50 border-gray-100', iconWrap: 'bg-gray-100', icon: <Clock className="h-5 w-5 text-gray-600" />, label: 'In progress' };
 
               return (
-                <div className={`p-5 ${statusStyles.wrap} border rounded-2xl flex items-center justify-between gap-4`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`${statusStyles.iconWrap} p-2 rounded-xl`}>{statusStyles.icon}</div>
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-widest text-gray-500">Status</p>
-                      <p className="text-lg font-black text-gray-900">{statusLabel}</p>
+                <div className="space-y-4">
+                  <div className={`p-5 ${statusStyles.wrap} border rounded-2xl flex items-center justify-between gap-4`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`${statusStyles.iconWrap} p-2 rounded-xl`}>{statusStyles.icon}</div>
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-widest text-gray-500">Status</p>
+                        <p className="text-lg font-black text-gray-900">{statusLabel}</p>
+                      </div>
                     </div>
+
+                    {showComplete && (
+                      <Button
+                        onClick={() => {
+                          setActivityToComplete(selectedActivity);
+                          setIsCompleteOpen(true);
+                        }}
+                        disabled={tooEarly}
+                        title={disableReason}
+                        className="h-10 rounded-xl font-black uppercase text-[10px] tracking-widest bg-indigo-600"
+                      >
+                        Upload Evidence
+                      </Button>
+                    )}
                   </div>
 
-                  {showComplete && (
-                    <Button
-                      onClick={() => {
-                        setActivityToComplete(selectedActivity);
-                        setIsCompleteOpen(true);
-                      }}
-                      disabled={tooEarly}
-                      title={disableReason}
-                      className="h-10 rounded-xl font-black uppercase text-[10px] tracking-widest bg-indigo-600"
-                    >
-                      Upload Evidence
-                    </Button>
+                  {isFailed && selectedActivity.verificationFlags?.length > 0 && (
+                    <div className="p-5 bg-red-50 border border-red-100 rounded-2xl flex gap-3">
+                      <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">AI Verification Feedback</p>
+                        <ul className="space-y-1">
+                          {selectedActivity.verificationFlags.map((flag, idx) => (
+                            <li key={idx} className="text-xs font-bold text-red-700 leading-relaxed">
+                              • {flag}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   )}
                 </div>
               );
