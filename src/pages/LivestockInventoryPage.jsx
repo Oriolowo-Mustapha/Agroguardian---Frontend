@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useNavigateBack } from '../hooks/useNavigateBack';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,6 @@ import {
   AlertTriangle,
   Package,
   Filter,
-  Loader2,
   Trash2,
   ShoppingCart,
   Tag,
@@ -19,12 +18,15 @@ import {
   Skull
 } from 'lucide-react';
 import api from '../lib/axios';
+import ModalShell from '../components/ui/ModalShell';
+import { Button } from '../components/ui/Button';
+import { LoadingState, EmptyState } from '../components/ui/States';
 
 const transactionTypes = {
   purchase: { icon: ShoppingCart, color: 'text-blue-600', bg: 'bg-blue-100', label: 'Purchase' },
   sale: { icon: Tag, color: 'text-green-600', bg: 'bg-green-100', label: 'Sale' },
   birth: { icon: Baby, color: 'text-pink-600', bg: 'bg-pink-100', label: 'Birth' },
-  death: { icon: Skull, color: 'text-gray-600', bg: 'bg-gray-100', label: 'Death' },
+  death: { icon: Skull, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Death' },
   transfer_in: { icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-100', label: 'Transfer In' },
   transfer_out: { icon: TrendingDown, color: 'text-orange-600', bg: 'bg-orange-100', label: 'Transfer Out' }
 };
@@ -83,6 +85,8 @@ export default function LivestockInventoryPage() {
   const [txQty, setTxQty] = useState(1);
   const [txUnitPrice, setTxUnitPrice] = useState('');
   const [addError, setAddError] = useState('');
+
+  const closeAddModal = useCallback(() => setShowAddModal(false), []);
 
   useEffect(() => {
     if (!showAddModal) return;
@@ -304,10 +308,10 @@ export default function LivestockInventoryPage() {
 
   if (!selectedFarm) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Please select a farm first</p>
+          <Package className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" aria-hidden="true" />
+          <p className="text-muted-foreground">Please select a farm first</p>
           <Link to="/farms" className="text-green-600 hover:underline">Go to Farms</Link>
         </div>
       </div>
@@ -315,73 +319,74 @@ export default function LivestockInventoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-4">
-          <button type="button" onClick={goBack} className="p-2 hover:bg-gray-100 rounded-lg">
-            <ArrowLeft className="w-5 h-5" />
+          <button type="button" onClick={goBack} aria-label="Go back" className="p-2 hover:bg-muted rounded-lg">
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold">Inventory & Finance</h1>
-            <p className="text-gray-500">{selectedFarm.name}</p>
+            <h1 className="text-2xl font-bold sm:text-3xl">Inventory & Finance</h1>
+            <p className="text-muted-foreground">{selectedFarm.name}</p>
           </div>
         </div>
-        <button
+        <Button
+          type="button"
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          className="flex items-center gap-2"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" aria-hidden="true" />
           Add Transaction
-        </button>
+        </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="w-5 h-5 text-blue-600" />
+              <Package className="w-5 h-5 text-blue-600" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Livestock</p>
+              <p className="text-sm text-muted-foreground">Total Livestock</p>
               <p className="text-xl font-bold">{summary.totalCount || 0}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
-              <TrendingUp className="w-5 h-5 text-green-600" />
+              <TrendingUp className="w-5 h-5 text-green-600" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Sales</p>
+              <p className="text-sm text-muted-foreground">Total Sales</p>
               <p className="text-xl font-bold">₦{(financial.totalSales || 0).toLocaleString()}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-orange-100 rounded-lg">
-              <TrendingDown className="w-5 h-5 text-orange-600" />
+              <TrendingDown className="w-5 h-5 text-orange-600" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Expenses</p>
+              <p className="text-sm text-muted-foreground">Total Expenses</p>
               <p className="text-xl font-bold">₦{(financial.totalPurchases || 0).toLocaleString()}</p>
-              <p className="text-xs text-gray-400">Includes purchases + death losses</p>
+              <p className="text-xs text-muted-foreground">Includes purchases + death losses</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${(financial.netProfit || 0) >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-              <DollarSign className={`w-5 h-5 ${(financial.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} />
+              <DollarSign className={`w-5 h-5 ${(financial.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`} aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Net Profit</p>
+              <p className="text-sm text-muted-foreground">Net Profit</p>
               <p className={`text-xl font-bold ${(financial.netProfit || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 ₦{Math.abs(financial.netProfit || 0).toLocaleString()}
               </p>
@@ -392,13 +397,13 @@ export default function LivestockInventoryPage() {
 
       {/* Inventory by Species */}
       {summary.bySpecies && Object.keys(summary.bySpecies).length > 0 && (
-        <div className="bg-white rounded-xl p-4 shadow-sm mb-6">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <h3 className="font-semibold mb-3">Inventory by Species</h3>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             {Object.entries(summary.bySpecies).map(([species, count]) => (
-              <div key={species} className="text-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-2xl">{speciesEmoji[species] || '🐾'}</span>
-                <p className="text-sm text-gray-500 capitalize mt-1">{species}</p>
+              <div key={species} className="text-center p-3 bg-muted rounded-lg">
+                <span className="text-2xl" aria-hidden="true">{speciesEmoji[species] || '🐾'}</span>
+                <p className="text-sm text-muted-foreground capitalize mt-1">{species}</p>
                 <p className="font-bold">{count}</p>
               </div>
             ))}
@@ -408,9 +413,9 @@ export default function LivestockInventoryPage() {
 
       {/* Mortality Alert */}
       {mortality.totalDeaths > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+        <div role="alert" className="bg-red-50 border border-red-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <AlertTriangle className="w-5 h-5 text-red-600" aria-hidden="true" />
             <h3 className="font-semibold text-red-800">Mortality Report (90 days)</h3>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -435,14 +440,15 @@ export default function LivestockInventoryPage() {
       )}
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-4">
+      <div className="flex flex-wrap gap-4">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-gray-500" />
-          <span className="text-sm text-gray-600">Type:</span>
+          <Filter className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
+          <span className="text-sm text-muted-foreground">Type:</span>
           <select
             value={filterType}
             onChange={e => setFilterType(e.target.value)}
-            className="border rounded-lg px-3 py-1 text-sm"
+            aria-label="Filter by transaction type"
+            className="border rounded-lg px-3 py-1"
           >
             <option value="all">All</option>
             <option value="purchase">Purchase</option>
@@ -454,11 +460,12 @@ export default function LivestockInventoryPage() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Species:</span>
+          <span className="text-sm text-muted-foreground">Species:</span>
           <select
             value={filterSpecies}
             onChange={e => setFilterSpecies(e.target.value)}
-            className="border rounded-lg px-3 py-1 text-sm"
+            aria-label="Filter by species"
+            className="border rounded-lg px-3 py-1"
           >
             <option value="all">All</option>
             <option value="cattle">Cattle</option>
@@ -473,34 +480,31 @@ export default function LivestockInventoryPage() {
       </div>
 
       {/* Transactions Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-          </div>
+          <LoadingState label="Loading transactions..." />
         ) : transactions.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No transactions yet</p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="mt-4 text-green-600 hover:underline"
-            >
-              Add your first transaction
-            </button>
-          </div>
+          <EmptyState
+            icon={<Package className="h-8 w-8" aria-hidden="true" />}
+            title="No transactions yet"
+            action={
+              <Button type="button" variant="link" onClick={() => setShowAddModal(true)}>
+                Add your first transaction
+              </Button>
+            }
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px]">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-muted border-b">
                 <tr>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Date</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Type</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Species</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Qty</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Amount</th>
-                <th className="text-left px-6 py-3 text-sm font-medium text-gray-500">Notes</th>
-                <th className="text-right px-6 py-3 text-sm font-medium text-gray-500">Actions</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Date</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Type</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Species</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Qty</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Amount</th>
+                <th className="text-left px-6 py-3 text-sm font-medium text-muted-foreground">Notes</th>
+                <th className="text-right px-6 py-3 text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -508,14 +512,14 @@ export default function LivestockInventoryPage() {
                 const typeConfig = transactionTypes[t.type] || transactionTypes.purchase;
                 const TypeIcon = typeConfig.icon;
                 return (
-                  <tr key={t._id} className="hover:bg-gray-50">
+                  <tr key={t._id} className="hover:bg-muted/40">
                     <td className="px-6 py-4 text-sm">
                       {formatDateSafe(t.date)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className={`p-1 rounded ${typeConfig.bg}`}>
-                          <TypeIcon className={`w-4 h-4 ${typeConfig.color}`} />
+                          <TypeIcon className={`w-4 h-4 ${typeConfig.color}`} aria-hidden="true" />
                         </div>
                         <span className="text-sm font-medium">{typeConfig.label}</span>
                       </div>
@@ -531,15 +535,17 @@ export default function LivestockInventoryPage() {
                         </span>
                       ) : '-'}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                    <td className="px-6 py-4 text-sm text-muted-foreground max-w-xs truncate">
                       {t.notes || t.causeOfDeath || '-'}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
+                        type="button"
                         onClick={() => deleteTransaction.mutate(t._id)}
+                        aria-label="Delete transaction"
                         className="text-red-500 hover:text-red-700 p-1"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </td>
                   </tr>
@@ -552,20 +558,32 @@ export default function LivestockInventoryPage() {
       </div>
 
       {/* Add Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-4">Add Transaction</h2>
-            
-            <form onSubmit={handleAddTransaction} className="space-y-4">
+      <ModalShell
+        open={showAddModal}
+        onClose={closeAddModal}
+        title="Add Transaction"
+        size="sm"
+        bodyClassName="space-y-4"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={closeAddModal}>
+              Cancel
+            </Button>
+            <Button type="submit" form="add-transaction-form" loading={addTransaction.isPending}>
+              {addTransaction.isPending ? 'Adding...' : 'Add Transaction'}
+            </Button>
+          </>
+        }
+      >
+        <form id="add-transaction-form" onSubmit={handleAddTransaction} className="space-y-4">
               {addError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+                <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive rounded-lg p-3 text-sm">
                   {addError}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Transaction Type *
                 </label>
                 <select
@@ -588,7 +606,7 @@ export default function LivestockInventoryPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Species *
                 </label>
                 <select
@@ -600,7 +618,7 @@ export default function LivestockInventoryPage() {
                     setAddError('');
                   }}
                   disabled={!!txLivestockId}
-                  className="w-full border rounded-lg px-3 py-2 disabled:bg-gray-50"
+                  className="w-full border rounded-lg px-3 py-2 disabled:bg-muted"
                 >
                   <option value="cattle">🐄 Cattle</option>
                   <option value="goat">🐐 Goat</option>
@@ -611,12 +629,12 @@ export default function LivestockInventoryPage() {
                   <option value="fish">🐟 Fish</option>
                 </select>
                 {txLivestockId && (
-                  <p className="text-xs text-gray-500 mt-1">Species is set from the selected livestock.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Species is set from the selected livestock.</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Livestock / Batch {txType === 'death' ? '*' : '(Optional)'}
                 </label>
                 <select
@@ -639,13 +657,13 @@ export default function LivestockInventoryPage() {
                   ))}
                 </select>
                 {txType === 'death' && (
-                  <p className="text-xs text-gray-500 mt-1">Death transactions must be tied to a specific livestock/batch so we can reduce the live count and track loss.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Death transactions must be tied to a specific livestock/batch so we can reduce the live count and track loss.</p>
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Quantity *
                   </label>
                   <input
@@ -662,11 +680,11 @@ export default function LivestockInventoryPage() {
                     className="w-full border rounded-lg px-3 py-2"
                   />
                   {maxDeathQty != null && (
-                    <p className="text-xs text-gray-500 mt-1">Available in batch: {maxDeathQty}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Available in batch: {maxDeathQty}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Date *
                   </label>
                   <input
@@ -681,7 +699,7 @@ export default function LivestockInventoryPage() {
 
               {(txType === 'purchase' || txType === 'sale' || txType === 'death') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     {txType === 'death' ? 'Estimated value per animal (₦) *' : 'Price per Unit (₦) *'}
                   </label>
                   <input
@@ -697,10 +715,10 @@ export default function LivestockInventoryPage() {
                     className="w-full border rounded-lg px-3 py-2"
                   />
                   {txType === 'death' && (
-                    <p className="text-xs text-gray-500 mt-1">Default is taken from the livestock “cost” (estimated selling value). You can override it if needed.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Default is taken from the livestock “cost” (estimated selling value). You can override it if needed.</p>
                   )}
                   {previewTotal != null && (
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       {txType === 'sale' ? 'Total revenue:' : txType === 'death' ? 'Total loss:' : 'Total expense:'} ₦{previewTotal.toLocaleString()}
                     </p>
                   )}
@@ -709,7 +727,7 @@ export default function LivestockInventoryPage() {
 
               {txType === 'death' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Cause of Death
                   </label>
                   <select name="deathCause" className="w-full border rounded-lg px-3 py-2">
@@ -724,7 +742,7 @@ export default function LivestockInventoryPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Notes
                 </label>
                 <textarea
@@ -734,26 +752,8 @@ export default function LivestockInventoryPage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={addTransaction.isPending}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {addTransaction.isPending ? 'Adding...' : 'Add Transaction'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </ModalShell>
     </div>
   );
 }

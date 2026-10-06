@@ -10,17 +10,18 @@ import {
   Plus,
   Clock,
   Sprout,
-  Image as ImageIcon,
-  Loader2
+  Image as ImageIcon
 } from 'lucide-react';
 import api from '../lib/axios';
 import { useNavigateBack } from '../hooks/useNavigateBack';
+import { Button } from '../components/ui/Button';
+import { EmptyState, LoadingState } from '../components/ui/States';
 
 const getStatusBadge = (status) => {
   const styles = {
     active: 'bg-green-100 text-green-700',
     resolved: 'bg-blue-100 text-blue-700',
-    archived: 'bg-gray-100 text-gray-700'
+    archived: 'bg-muted text-muted-foreground'
   };
   return (
     <span className={`px-2 py-0.5 rounded-full text-xs ${styles[status] || styles.active}`}>
@@ -37,7 +38,7 @@ const getIssueBadge = (issueType) => {
     pest: 'bg-amber-100 text-amber-700',
     nutrient: 'bg-green-100 text-green-700',
     weather: 'bg-blue-100 text-blue-700',
-    general: 'bg-gray-100 text-gray-700'
+    general: 'bg-muted text-muted-foreground'
   };
 
   return (
@@ -279,157 +280,141 @@ export default function CropConsultationPage() {
 
   if (!selectedFarm) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Sprout className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Please select a farm first</p>
-          <Link to="/farms" className="text-green-600 hover:underline">
-            Go to Farms
-          </Link>
-        </div>
-      </div>
+      <EmptyState
+        icon={<Sprout className="h-8 w-8" aria-hidden="true" />}
+        title="No farm selected"
+        description="Please select a farm first"
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/farms">Go to Farms</Link>
+          </Button>
+        }
+      />
     );
   }
 
+  const consultationList = loadingConsultations ? (
+    <LoadingState className="py-8" label="Loading chats..." />
+  ) : consultations.length === 0 ? (
+    <EmptyState
+      className="py-8"
+      icon={<MessageCircle className="h-8 w-8" aria-hidden="true" />}
+      title="No chats yet"
+    />
+  ) : (
+    <div className="divide-y">
+      {consultations.map((c) => (
+        <button
+          key={c._id}
+          type="button"
+          onClick={() => handleSelectConsultation(c._id)}
+          aria-current={activeConsultation === c._id ? 'true' : undefined}
+          className={`w-full p-4 text-left hover:bg-muted ${
+            activeConsultation === c._id ? 'bg-primary/10 border-l-4 border-primary' : ''
+          }`}
+        >
+          <div className="flex items-start justify-between mb-1 gap-2">
+            <span className="text-lg" aria-hidden="true">🌱</span>
+            {getStatusBadge(c.status)}
+          </div>
+          <p className="font-medium text-sm truncate">{c.title || c.cropName || 'Crop Chat'}</p>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {getIssueBadge(c.issueType)}
+            {c.severity && (
+              <span className="px-2 py-0.5 rounded-full text-xs bg-muted text-muted-foreground">
+                {c.severity}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" aria-hidden="true" />
+              {new Date(c.updatedAt || c.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white border-b px-4 sm:px-6 py-4">
+      <div className="bg-card border border-border px-4 sm:px-6 py-4 rounded-xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <button type="button" onClick={goBack} className="p-2 hover:bg-gray-100 rounded-lg">
-              <ArrowLeft className="w-5 h-5" />
+            <button
+              type="button"
+              onClick={goBack}
+              aria-label="Go back"
+              className="p-2 hover:bg-muted rounded-lg text-muted-foreground"
+            >
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={() => setIsListOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg md:hidden"
+              aria-label="Open chats list"
+              className="p-2 hover:bg-muted rounded-lg text-muted-foreground md:hidden"
               title="Consultations"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-5 h-5" aria-hidden="true" />
             </button>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-semibold truncate">Crop AI Chats</h1>
-              <p className="text-sm text-gray-500 truncate">{selectedFarm.name}</p>
+              <p className="text-sm text-muted-foreground truncate">{selectedFarm.name}</p>
             </div>
           </div>
 
-          <button
+          <Button
+            type="button"
             onClick={() => {
               setActiveConsultation(null);
               setShowNewConsultation(true);
               setIsListOpen(false);
             }}
-            className="flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 w-full sm:w-auto"
+            className="w-full gap-2 rounded-lg sm:w-auto"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" aria-hidden="true" />
             <span className="hidden sm:inline">New Chat</span>
             <span className="sm:hidden">New</span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="flex h-[calc(100dvh-130px)] md:h-[calc(100vh-130px)] min-h-0">
+      <div className="flex h-[calc(100dvh-17rem)] min-h-[16rem]">
         {/* Sidebar - Consultation List (desktop) */}
-        <div className="hidden md:block w-80 shrink-0 bg-white border-r overflow-y-auto">
-          <div className="p-4 border-b">
-            <h3 className="font-medium text-gray-700">All Chats</h3>
+        <div className="hidden md:block w-80 shrink-0 bg-card border-r border-border overflow-y-auto">
+          <div className="p-4 border-b border-border">
+            <h3 className="font-medium text-foreground">All Chats</h3>
           </div>
-
-          {loadingConsultations ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-            </div>
-          ) : consultations.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No chats yet</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {consultations.map((c) => (
-                <button
-                  key={c._id}
-                  onClick={() => handleSelectConsultation(c._id)}
-                  className={`w-full p-4 text-left hover:bg-gray-50 ${
-                    activeConsultation === c._id ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-1 gap-2">
-                    <span className="text-lg">🌱</span>
-                    {getStatusBadge(c.status)}
-                  </div>
-                  <p className="font-medium text-sm truncate">{c.title || c.cropName || 'Crop Chat'}</p>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    {getIssueBadge(c.issueType)}
-                    {c.severity && (
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
-                        {c.severity}
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {new Date(c.updatedAt || c.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+          {consultationList}
         </div>
 
         {/* Mobile Consultation List (drawer) */}
         {isListOpen && (
           <>
-            <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setIsListOpen(false)} />
-            <div className="fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-white md:hidden flex flex-col">
-              <div className="p-4 border-b flex items-center justify-between">
-                <h3 className="font-medium text-gray-700">All Chats</h3>
-                <button type="button" onClick={() => setIsListOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-                  <X className="w-5 h-5" />
+            <div
+              className="fixed inset-0 z-40 bg-black/50 md:hidden"
+              onClick={() => setIsListOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              className="fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-card border-r border-border md:hidden flex flex-col"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Your chats"
+            >
+              <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+                <h3 className="font-medium text-foreground">All Chats</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsListOpen(false)}
+                  aria-label="Close chats list"
+                  className="p-2 hover:bg-muted rounded-lg text-muted-foreground"
+                >
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
-
-              {loadingConsultations ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-                </div>
-              ) : consultations.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No chats yet</p>
-                </div>
-              ) : (
-                <div className="divide-y overflow-y-auto">
-                  {consultations.map((c) => (
-                    <button
-                      key={c._id}
-                      onClick={() => handleSelectConsultation(c._id)}
-                      className={`w-full p-4 text-left hover:bg-gray-50 ${
-                        activeConsultation === c._id ? 'bg-indigo-50 border-l-4 border-indigo-600' : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-1 gap-2">
-                        <span className="text-lg">🌱</span>
-                        {getStatusBadge(c.status)}
-                      </div>
-                      <p className="font-medium text-sm truncate">{c.title || c.cropName || 'Crop Chat'}</p>
-                      <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        {getIssueBadge(c.issueType)}
-                        {c.severity && (
-                          <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
-                            {c.severity}
-                          </span>
-                        )}
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {new Date(c.updatedAt || c.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="flex-1 min-h-0 overflow-y-auto">{consultationList}</div>
             </div>
           </>
         )}
@@ -437,17 +422,18 @@ export default function CropConsultationPage() {
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {showNewConsultation ? (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="w-full max-w-lg bg-white rounded-xl shadow-sm p-6">
+            <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
+              <div className="w-full max-w-lg bg-card border border-border rounded-xl shadow-sm p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-4">Start New Crop Chat</h2>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Farm</label>
+                    <label htmlFor="crop-farm" className="block text-sm font-medium text-foreground mb-1">Farm</label>
                     <select
+                      id="crop-farm"
                       value={selectedFarm?._id || ''}
                       onChange={(e) => setSearchParams({ farmId: e.target.value })}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-border rounded-lg px-3 py-2 bg-background text-base"
                     >
                       {farms.map((f) => (
                         <option key={f._id} value={f._id}>
@@ -458,8 +444,9 @@ export default function CropConsultationPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Crop</label>
+                    <label htmlFor="crop-crop" className="block text-sm font-medium text-foreground mb-1">Crop</label>
                     <select
+                      id="crop-crop"
                       value={newConsultationForm.cropId}
                       onChange={(e) => {
                         const id = e.target.value;
@@ -471,7 +458,7 @@ export default function CropConsultationPage() {
                           seasonId: ''
                         }));
                       }}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-border rounded-lg px-3 py-2 bg-background text-base"
                     >
                       <option value="">Select crop (optional)</option>
                       {farmCrops.map((c) => (
@@ -491,16 +478,18 @@ export default function CropConsultationPage() {
                         }))
                       }
                       placeholder="Crop name (required)"
-                      className="w-full border rounded-lg px-3 py-2 mt-2"
+                      aria-label="Crop name (required)"
+                      className="w-full border border-border rounded-lg px-3 py-2 mt-2 bg-background text-base"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Season (Optional)</label>
+                    <label htmlFor="crop-season" className="block text-sm font-medium text-foreground mb-1">Season (Optional)</label>
                     <select
+                      id="crop-season"
                       value={newConsultationForm.seasonId}
                       onChange={(e) => setNewConsultationForm((prev) => ({ ...prev, seasonId: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-border rounded-lg px-3 py-2 bg-background text-base"
                       disabled={seasonsForSelectedCrop.length === 0}
                     >
                       <option value="">{seasonsForSelectedCrop.length === 0 ? 'Select crop to load seasons' : 'No season selected'}</option>
@@ -513,57 +502,57 @@ export default function CropConsultationPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">What’s the issue?</label>
+                    <label htmlFor="crop-message" className="block text-sm font-medium text-foreground mb-1">What’s the issue?</label>
                     <textarea
+                      id="crop-message"
                       value={newConsultationForm.message}
                       onChange={(e) => setNewConsultationForm((prev) => ({ ...prev, message: e.target.value }))}
                       rows={4}
                       placeholder="Example: Leaves are turning yellow with brown spots..."
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-border rounded-lg px-3 py-2 bg-background text-base"
                     />
                   </div>
 
-                  <button
+                  {startConsultation.isError && (
+                    <div role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                      {startConsultation.error?.response?.data?.message || 'Could not start the chat. Please try again.'}
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
                     onClick={() =>
                       startConsultation.mutate({
                         ...newConsultationForm,
                         images: selectedImages
                       })
                     }
-                    disabled={!canStart || startConsultation.isPending}
-                    className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                    disabled={!canStart}
+                    loading={startConsultation.isPending}
+                    className="w-full gap-2 rounded-lg"
                   >
-                    {startConsultation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Starting...
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle className="w-4 h-4" />
-                        Start Chat
-                      </>
-                    )}
-                  </button>
+                    {!startConsultation.isPending && <MessageCircle className="w-4 h-4" aria-hidden="true" />}
+                    {startConsultation.isPending ? 'Starting...' : 'Start Chat'}
+                  </Button>
                 </div>
               </div>
             </div>
           ) : activeConsultation && consultation ? (
             <>
               {/* Chat Header */}
-              <div className="bg-white border-b px-6 py-3">
+              <div className="bg-card border-b border-border px-4 sm:px-6 py-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-2xl">🌱</span>
+                    <span className="text-2xl" aria-hidden="true">🌱</span>
                     <div className="min-w-0">
                       <h3 className="font-medium truncate">{consultation.title || consultation.cropName || 'Crop Chat'}</h3>
-                      <p className="text-xs text-gray-500 truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         {consultation.cropName}
                         {consultation.issueType ? ` • ${consultation.issueType}` : ''}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {getIssueBadge(consultation.issueType)}
                     {getStatusBadge(consultation.status)}
                   </div>
@@ -571,17 +560,20 @@ export default function CropConsultationPage() {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              <div
+                className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4"
+                role="log"
+                aria-live="polite"
+                aria-label="Chat messages"
+              >
                 {loadingActive ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-                  </div>
+                  <LoadingState label="Loading messages..." />
                 ) : (
                   consultation.messages?.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div
-                        className={`max-w-[85%] md:max-w-[70%] rounded-xl px-4 py-3 ${
-                          msg.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white border shadow-sm'
+                        className={`min-w-0 max-w-[85%] md:max-w-[70%] rounded-xl px-4 py-3 ${
+                          msg.role === 'user' ? 'bg-primary text-white' : 'bg-card border border-border shadow-sm'
                         }`}
                       >
                         {msg.imageUrls?.length > 0 && (
@@ -591,8 +583,8 @@ export default function CropConsultationPage() {
                             ))}
                           </div>
                         )}
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
-                        <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-indigo-100' : 'text-gray-400'}`}>
+                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                        <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-white/80' : 'text-muted-foreground'}`}>
                           {new Date(msg.timestamp).toLocaleTimeString()}
                         </p>
                       </div>
@@ -603,24 +595,32 @@ export default function CropConsultationPage() {
               </div>
 
               {/* Input Area */}
-              <div className="bg-white border-t p-4">
+              <div className="bg-card border-t border-border p-4">
                 {selectedImages.length > 0 && (
                   <div className="flex gap-2 mb-3 flex-wrap">
                     {selectedImages.map((item, idx) => (
-                      <div key={idx} className="relative">
+                      <div key={idx} className="relative group">
                         <img src={item.previewUrl} alt="Selected" className="w-16 h-16 object-cover rounded" />
                         <button
+                          type="button"
                           onClick={() => removeImage(idx)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5"
+                          aria-label={`Remove image ${idx + 1}`}
+                          className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:opacity-100"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3 h-3" aria-hidden="true" />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
 
-                <div className="flex items-end gap-3">
+                {sendMessage.isError && (
+                  <div role="alert" className="mb-3 rounded-lg bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                    {sendMessage.error?.response?.data?.message || 'Failed to send your message. Please try again.'}
+                  </div>
+                )}
+
+                <div className="flex items-end gap-2 sm:gap-3">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -629,13 +629,17 @@ export default function CropConsultationPage() {
                     multiple
                     className="hidden"
                   />
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+                    aria-label="Attach images"
                     title="Attach images"
+                    className="shrink-0 text-muted-foreground hover:text-foreground"
                   >
-                    <ImageIcon className="w-5 h-5" />
-                  </button>
+                    <ImageIcon className="w-5 h-5" aria-hidden="true" />
+                  </Button>
 
                   <textarea
                     value={newMessage}
@@ -648,30 +652,34 @@ export default function CropConsultationPage() {
                       }
                     }}
                     placeholder="Type your message..."
+                    aria-label="Type your message"
                     rows={1}
-                    className="flex-1 border rounded-lg px-4 py-2 resize-none"
+                    className="min-w-0 flex-1 border border-border rounded-lg px-4 py-2 resize-none bg-background text-base"
                   />
 
-                  <button
+                  <Button
+                    type="button"
+                    size="icon"
+                    aria-label="Send message"
                     onClick={() =>
                       sendMessage.mutate({ consultationId: activeConsultation, message: newMessage, images: selectedImages })
                     }
-                    disabled={!newMessage.trim() || sendMessage.isPending}
-                    className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    disabled={!newMessage.trim()}
+                    loading={sendMessage.isPending}
+                    className="shrink-0 rounded-lg"
                   >
-                    {sendMessage.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                  </button>
+                    {!sendMessage.isPending && <Send className="w-5 h-5" aria-hidden="true" />}
+                  </Button>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-700">Select a chat</h3>
-                <p className="text-gray-500 mt-1">Choose from the list or start a new one</p>
-              </div>
-            </div>
+            <EmptyState
+              className="flex-1"
+              icon={<MessageCircle className="h-8 w-8" aria-hidden="true" />}
+              title="Select a chat"
+              description="Choose from the list or start a new one"
+            />
           )}
         </div>
       </div>

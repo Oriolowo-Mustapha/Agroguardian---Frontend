@@ -11,10 +11,12 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Loader2,
   Trash2
 } from 'lucide-react';
 import api from '../lib/axios';
+import ModalShell from '../components/ui/ModalShell';
+import { Button } from '../components/ui/Button';
+import { LoadingState, EmptyState } from '../components/ui/States';
 
 const statusColors = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -66,6 +68,9 @@ export default function LivestockBreedingPage() {
   const [actionError, setActionError] = useState(null);
   const [actionInfo, setActionInfo] = useState(null);
   const [confirmingId, setConfirmingId] = useState(null);
+
+  const closeAddModal = useCallback(() => setShowAddModal(false), []);
+  const closeBirthModal = useCallback(() => setShowBirthModal(null), []);
 
   useEffect(() => {
     if (location.state?.openAddModal) {
@@ -362,10 +367,10 @@ export default function LivestockBreedingPage() {
 
   if (!selectedFarm) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Please select a farm first</p>
+          <Heart className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" aria-hidden="true" />
+          <p className="text-muted-foreground">Please select a farm first</p>
           <Link to="/farms" className="text-green-600 hover:underline">Go to Farms</Link>
         </div>
       </div>
@@ -373,32 +378,39 @@ export default function LivestockBreedingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button type="button" onClick={goBack} className="p-2 hover:bg-gray-100 rounded-lg">
-            <ArrowLeft className="w-5 h-5" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="Go back"
+            className="p-2 hover:bg-muted rounded-lg"
+          >
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold">Breeding Management</h1>
-            <p className="text-gray-500">{selectedFarm.name}</p>
+            <h1 className="text-2xl font-bold sm:text-3xl">Breeding Management</h1>
+            <p className="text-muted-foreground">{selectedFarm.name}</p>
           </div>
         </div>
         <button
+          type="button"
           onClick={() => setShowAddModal(true)}
           className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4" aria-hidden="true" />
           Add Breeding Record
         </button>
       </div>
 
       {(actionError || actionInfo) && (
         <div
-          className={`mb-4 rounded-xl border p-3 text-sm ${
+          role={actionError ? 'alert' : 'status'}
+          className={`rounded-xl border p-3 text-sm ${
             actionError
-              ? 'bg-red-50 border-red-200 text-red-700'
+              ? 'bg-destructive/10 border-destructive/20 text-destructive'
               : 'bg-green-50 border-green-200 text-green-700'
           }`}
         >
@@ -407,50 +419,50 @@ export default function LivestockBreedingPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-pink-100 rounded-lg">
-              <Heart className="w-5 h-5 text-pink-600" />
+              <Heart className="w-5 h-5 text-pink-600" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Breedings</p>
+              <p className="text-sm text-muted-foreground">Total Breedings</p>
               <p className="text-xl font-bold">{stats.totalBreedings || 0}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <Clock className="w-5 h-5 text-blue-600" />
+              <Clock className="w-5 h-5 text-blue-600" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Active Pregnancies</p>
+              <p className="text-sm text-muted-foreground">Active Pregnancies</p>
               <p className="text-xl font-bold">{activePregnancies.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
-              <Baby className="w-5 h-5 text-green-600" />
+              <Baby className="w-5 h-5 text-green-600" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Total Births</p>
+              <p className="text-sm text-muted-foreground">Total Births</p>
               <p className="text-xl font-bold">{stats.successfulBirths || 0}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        <div className="bg-card rounded-xl p-4 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-amber-100 rounded-lg">
-              <Calendar className="w-5 h-5 text-amber-600" />
+              <Calendar className="w-5 h-5 text-amber-600" aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Upcoming (30d)</p>
+              <p className="text-sm text-muted-foreground">Upcoming (30d)</p>
               <p className="text-xl font-bold">{upcomingBirths.length}</p>
             </div>
           </div>
@@ -459,22 +471,23 @@ export default function LivestockBreedingPage() {
 
       {/* Upcoming Births Alert */}
       {upcomingBirths.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertCircle className="w-5 h-5 text-amber-600" />
+            <AlertCircle className="w-5 h-5 text-amber-600" aria-hidden="true" />
             <h3 className="font-semibold text-amber-800">Upcoming Births</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {upcomingBirths.slice(0, 3).map(b => (
-              <div key={b._id} className="bg-white rounded-lg p-3 border border-amber-100">
+              <div key={b._id} className="bg-card rounded-lg p-3 border border-amber-100">
                 <div className="flex items-center gap-2 mb-1">
-                  <span>{speciesEmoji[b.damId?.species] || '🐾'}</span>
+                  <span aria-hidden="true">{speciesEmoji[b.damId?.species] || '🐾'}</span>
                   <span className="font-medium">{b.damId?.name || b.damId?.tagId}</span>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Expected: {new Date(b.expectedDueDate).toLocaleDateString()}
                 </p>
                 <button
+                  type="button"
                   onClick={() => setShowBirthModal(b._id)}
                   className="mt-2 text-sm text-green-600 hover:underline"
                 >
@@ -487,15 +500,17 @@ export default function LivestockBreedingPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-wrap gap-2">
         {['all', 'pending', 'confirmed', 'successful', 'failed'].map(tab => (
           <button
             key={tab}
+            type="button"
             onClick={() => setActiveTab(tab)}
+            aria-pressed={activeTab === tab}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${
               activeTab === tab
                 ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -504,22 +519,19 @@ export default function LivestockBreedingPage() {
       </div>
 
       {/* Records */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-          </div>
+          <LoadingState label="Loading breeding records..." />
         ) : breedingRecords.length === 0 ? (
-          <div className="text-center py-12">
-            <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No breeding records yet</p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="mt-4 text-green-600 hover:underline"
-            >
-              Add your first record
-            </button>
-          </div>
+          <EmptyState
+            icon={<Heart className="h-8 w-8" aria-hidden="true" />}
+            title="No breeding records yet"
+            action={
+              <Button type="button" variant="link" onClick={() => setShowAddModal(true)}>
+                Add your first record
+              </Button>
+            }
+          />
         ) : (
           <div className="divide-y">
             {breedingRecords.map((record) => {
@@ -527,10 +539,10 @@ export default function LivestockBreedingPage() {
               const canRecordBirth = record.status === 'confirmed_pregnant' || record.isPregnant === true;
 
               return (
-                <div key={record._id} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
+                <div key={record._id} className="p-4 hover:bg-muted/40">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
-                      <div className="text-2xl">
+                      <div className="text-2xl" aria-hidden="true">
                         {speciesEmoji[record.damId?.species] || '🐾'}
                       </div>
                       <div>
@@ -538,12 +550,12 @@ export default function LivestockBreedingPage() {
                           <span className="font-medium">
                             {record.damId?.name || record.damId?.tagId || 'Dam'}
                           </span>
-                          <span className="text-gray-400">×</span>
-                          <span className="text-gray-600">
+                          <span className="text-muted-foreground" aria-hidden="true">×</span>
+                          <span className="text-muted-foreground">
                             {record.sireId?.name || record.sireId?.tagId || 'AI'}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
                           <span>{record.breedingMethod || 'natural'}</span>
                           <span>•</span>
                           <span>{new Date(record.breedingDate).toLocaleDateString()}</span>
@@ -557,7 +569,7 @@ export default function LivestockBreedingPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                       <span className={`px-3 py-1 rounded-full text-xs ${statusColors[uiStatus] || ''}`}>
                         {uiStatus}
                       </span>
@@ -586,10 +598,12 @@ export default function LivestockBreedingPage() {
                       )}
 
                       <button
+                        type="button"
                         onClick={() => deleteBreeding.mutate(record._id)}
+                        aria-label="Delete breeding record"
                         className="text-red-500 hover:text-red-700 p-1"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -598,7 +612,7 @@ export default function LivestockBreedingPage() {
                     <div className="mt-3 bg-blue-50 rounded-lg p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 text-blue-700">
-                          <CheckCircle className="w-4 h-4" />
+                          <CheckCircle className="w-4 h-4" aria-hidden="true" />
                           <span className="font-medium">Pregnancy Follow-ups</span>
                         </div>
                         <span className="text-xs text-blue-700">
@@ -618,11 +632,11 @@ export default function LivestockBreedingPage() {
                             const canMarkDone = nowDay.getTime() >= dueDay.getTime();
 
                             return (
-                              <div key={f._id || `${f.type}-${f.dueDate}`} className="bg-white border border-blue-100 rounded-lg p-2">
+                              <div key={f._id || `${f.type}-${f.dueDate}`} className="bg-card border border-blue-100 rounded-lg p-2">
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <p className="text-sm font-medium text-gray-800">{f.title}</p>
-                                    <p className="text-xs text-gray-500">Due: {new Date(f.dueDate).toLocaleDateString()}</p>
+                                    <p className="text-sm font-medium text-foreground">{f.title}</p>
+                                    <p className="text-xs text-muted-foreground">Due: {new Date(f.dueDate).toLocaleDateString()}</p>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span
@@ -630,7 +644,7 @@ export default function LivestockBreedingPage() {
                                         f.status === 'done'
                                           ? 'bg-green-100 text-green-700'
                                           : f.status === 'skipped'
-                                            ? 'bg-gray-100 text-gray-600'
+                                            ? 'bg-muted text-muted-foreground'
                                             : 'bg-yellow-100 text-yellow-700'
                                       }`}
                                     >
@@ -655,7 +669,7 @@ export default function LivestockBreedingPage() {
                                     )}
 
                                     {f._id && f.status !== 'done' && !canMarkDone && (
-                                      <span className="text-[11px] text-gray-500">Available on due date</span>
+                                      <span className="text-[11px] text-muted-foreground">Available on due date</span>
                                     )}
 
                                     {f._id && f.status === 'pending' && (
@@ -669,7 +683,7 @@ export default function LivestockBreedingPage() {
                                           })
                                         }
                                         disabled={updateFollowUp.isPending}
-                                        className="text-xs text-gray-700 hover:underline disabled:opacity-50"
+                                        className="text-xs text-muted-foreground hover:underline disabled:opacity-50"
                                       >
                                         Skip
                                       </button>
@@ -686,7 +700,7 @@ export default function LivestockBreedingPage() {
                   {record.birthOutcome && (
                     <div className="mt-3 bg-green-50 rounded-lg p-3">
                       <div className="flex items-center gap-2 text-green-700">
-                        <Baby className="w-4 h-4" />
+                        <Baby className="w-4 h-4" aria-hidden="true" />
                         <span className="font-medium">Birth Recorded</span>
                       </div>
                       <p className="text-sm text-green-600 mt-1">
@@ -703,26 +717,43 @@ export default function LivestockBreedingPage() {
       </div>
 
       {/* Add Breeding Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Add Breeding Record</h2>
+      <ModalShell
+        open={showAddModal}
+        onClose={closeAddModal}
+        title="Add Breeding Record"
+        size="sm"
+        bodyClassName="space-y-4"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={closeAddModal}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="add-breeding-form"
+              loading={addBreeding.isPending}
+              disabled={isBreedingAllLoading || !femaleEligibility.eligible}
+            >
+              {addBreeding.isPending ? 'Adding...' : 'Add Record'}
+            </Button>
+          </>
+        }
+      >
+        {actionError && (
+          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-lg p-3">
+            {actionError}
+          </div>
+        )}
 
-            {actionError && (
-              <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-lg p-3 mb-3">
-                {actionError}
-              </div>
-            )}
+        {!isBreedingAllLoading && !femaleEligibility.eligible && (selectedFemaleId || prefillFemaleId) && (
+          <div role="status" className="bg-amber-50 border border-amber-100 text-amber-800 text-sm rounded-lg p-3">
+            {femaleEligibility.reason}
+          </div>
+        )}
 
-            {!isBreedingAllLoading && !femaleEligibility.eligible && (selectedFemaleId || prefillFemaleId) && (
-              <div className="bg-amber-50 border border-amber-100 text-amber-800 text-sm rounded-lg p-3 mb-3">
-                {femaleEligibility.reason}
-              </div>
-            )}
-            
-            <form onSubmit={handleAddBreeding} className="space-y-4">
+        <form id="add-breeding-form" onSubmit={handleAddBreeding} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Female (Dam) *
                 </label>
                 <select
@@ -742,7 +773,7 @@ export default function LivestockBreedingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Male (Sire)
                 </label>
                 <select
@@ -759,9 +790,9 @@ export default function LivestockBreedingPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Method *
                   </label>
                   <select name="breedingMethod" required className="w-full border rounded-lg px-3 py-2">
@@ -771,7 +802,7 @@ export default function LivestockBreedingPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Date *
                   </label>
                   <input
@@ -785,7 +816,7 @@ export default function LivestockBreedingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Notes
                 </label>
                 <textarea
@@ -795,37 +826,35 @@ export default function LivestockBreedingPage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={addBreeding.isPending || isBreedingAllLoading || !femaleEligibility.eligible}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {addBreeding.isPending ? 'Adding...' : 'Add Record'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </ModalShell>
 
       {/* Record Birth Modal */}
-      {showBirthModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Record Birth</h2>
-            
-            <form onSubmit={handleRecordBirth} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+      <ModalShell
+        open={!!showBirthModal}
+        onClose={closeBirthModal}
+        title="Record Birth"
+        size="sm"
+        bodyClassName="space-y-4"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={closeBirthModal}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="record-birth-form"
+              loading={recordBirth.isPending}
+            >
+              {recordBirth.isPending ? 'Recording...' : 'Record Birth'}
+            </Button>
+          </>
+        }
+      >
+        <form id="record-birth-form" onSubmit={handleRecordBirth} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Birth Date *
                   </label>
                   <input
@@ -837,7 +866,7 @@ export default function LivestockBreedingPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Total Offspring *
                   </label>
                   <input
@@ -852,7 +881,7 @@ export default function LivestockBreedingPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Males
                   </label>
                   <input
@@ -864,7 +893,7 @@ export default function LivestockBreedingPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Females
                   </label>
                   <input
@@ -876,7 +905,7 @@ export default function LivestockBreedingPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-foreground mb-1">
                     Stillborn
                   </label>
                   <input
@@ -890,7 +919,7 @@ export default function LivestockBreedingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Average Birth Weight (kg)
                 </label>
                 <input
@@ -902,7 +931,7 @@ export default function LivestockBreedingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Notes
                 </label>
                 <textarea
@@ -913,26 +942,8 @@ export default function LivestockBreedingPage() {
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowBirthModal(null)}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={recordBirth.isPending}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                >
-                  {recordBirth.isPending ? 'Recording...' : 'Record Birth'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </ModalShell>
     </div>
   );
 }

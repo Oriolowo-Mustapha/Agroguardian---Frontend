@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
-import { Leaf, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Leaf, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../components/ui/Card';  
@@ -68,10 +68,10 @@ const RegisterPage = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#FDFCF0] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6">
         <Card className="w-full max-w-md shadow-xl border-none text-center p-8">
           <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">   
-            <Leaf className="text-green-600 h-10 w-10" />
+            <Leaf className="text-green-600 h-10 w-10" aria-hidden="true" />
           </div>
           <CardTitle className="text-2xl font-bold mb-2">Check your email</CardTitle>
           <CardDescription className="text-lg">
@@ -86,10 +86,10 @@ const RegisterPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFCF0] flex flex-col items-center justify-center p-4 py-12">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6 py-12">
       <Link to="/" className="flex items-center gap-2 mb-8 group">
         <div className="bg-primary p-2 rounded-lg group-hover:scale-110 transition-transform">
-          <Leaf className="text-white h-6 w-6" />
+          <Leaf className="text-white h-6 w-6" aria-hidden="true" />
         </div>
         <span className="text-2xl font-bold text-primary">AgroGuardian AI</span>
       </Link>
@@ -104,30 +104,32 @@ const RegisterPage = () => {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm font-medium border border-red-100"> 
+              <div role="alert" className="bg-destructive/10 text-destructive p-3 rounded-md text-sm font-medium border border-destructive/20">
                 {error}
               </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700" htmlFor="firstName">First Name</label>     
+                <label className="text-sm font-medium text-gray-700" htmlFor="firstName">First Name</label>
                 <Input
                   id="firstName"
                   placeholder="John"
+                  aria-invalid={!!errors.firstName}
+                  aria-describedby={errors.firstName ? 'firstName-error' : undefined}
                   {...register('firstName')}
-                  className={errors.firstName ? 'border-red-500' : ''}
                 />
-                {errors.firstName && <p className="text-xs text-red-500">{errors.firstName.message}</p>}        
+                {errors.firstName && <p id="firstName-error" className="text-xs text-destructive">{errors.firstName.message}</p>}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700" htmlFor="lastName">Last Name</label>       
+                <label className="text-sm font-medium text-gray-700" htmlFor="lastName">Last Name</label>
                 <Input
                   id="lastName"
                   placeholder="Doe"
+                  aria-invalid={!!errors.lastName}
+                  aria-describedby={errors.lastName ? 'lastName-error' : undefined}
                   {...register('lastName')}
-                  className={errors.lastName ? 'border-red-500' : ''}
                 />
-                {errors.lastName && <p className="text-xs text-red-500">{errors.lastName.message}</p>}
+                {errors.lastName && <p id="lastName-error" className="text-xs text-destructive">{errors.lastName.message}</p>}
               </div>
             </div>
             <div className="space-y-2">
@@ -136,10 +138,11 @@ const RegisterPage = () => {
                 id="email"
                 type="email"
                 placeholder="m@example.com"
+                aria-invalid={!!errors.email}
+                aria-describedby={errors.email ? 'email-error' : undefined}
                 {...register('email')}
-                className={errors.email ? 'border-red-500' : ''}
               />
-              {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+              {errors.email && <p id="email-error" className="text-xs text-destructive">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="password">Password</label>
@@ -147,18 +150,21 @@ const RegisterPage = () => {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
+                  aria-invalid={!!errors.password}
+                  aria-describedby={errors.password ? 'password-error' : undefined}
                   {...register('password')}
-                  className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                  className="pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                 </button>
               </div>
-              {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
+              {errors.password && <p id="password-error" className="text-xs text-destructive">{errors.password.message}</p>}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700" htmlFor="confirmPassword">Confirm Password</label>
@@ -166,29 +172,29 @@ const RegisterPage = () => {
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
+                  aria-invalid={!!errors.confirmPassword}
+                  aria-describedby={errors.confirmPassword ? 'confirmPassword-error' : undefined}
                   {...register('confirmPassword')}
-                  className={errors.confirmPassword ? 'border-red-500 pr-10' : 'pr-10'}
+                  className="pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showConfirmPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                 </button>
               </div>
-              {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>}
+              {errors.confirmPassword && <p id="confirmPassword-error" className="text-xs text-destructive">{errors.confirmPassword.message}</p>}
             </div>
-            <Button type="submit" className="w-full h-11 text-lg font-bold" disabled={isLoading}>
+            <Button type="submit" loading={isLoading} className="w-full h-11 text-lg font-bold">
               {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating account...
-                </>
+                'Creating account...'
               ) : (
                 <>
                   Create Account
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                 </>
               )}
             </Button>
@@ -196,16 +202,16 @@ const RegisterPage = () => {
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200"></span>
+              <span className="w-full border-t border-border"></span>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
           <Button
             variant="outline"
-            className="w-full border-gray-200 hover:bg-gray-50"
+            className="w-full border-border hover:bg-muted"
             onClick={() => {
               const apiBase = import.meta.env.VITE_API_URL || 'https://agroguardian-ai.onrender.com/api';
               const redirect = `${window.location.origin}/auth/google/callback`;
@@ -218,8 +224,8 @@ const RegisterPage = () => {
             Sign up with Google
           </Button>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4 text-center border-t border-gray-50 pt-6">
-          <p className="text-sm text-gray-600">
+        <CardFooter className="flex flex-col space-y-4 text-center border-t border-border pt-6">
+          <p className="text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link to="/login" className="text-primary font-bold hover:underline">
               Sign in

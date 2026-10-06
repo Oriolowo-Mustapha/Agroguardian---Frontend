@@ -1,0 +1,18 @@
+{
+  "entries": [
+    {
+      "id": "20261006-192942-586000-10e5",
+      "type": "insight",
+      "agent": "opencode",
+      "ts": "2026-10-06T19:29:42.601Z",
+      "tags": [
+        "agroguardian",
+        "modalshell",
+        "react",
+        "focus-trap",
+        "gotcha"
+      ]
+    }
+  ],
+  "version": 1
+}

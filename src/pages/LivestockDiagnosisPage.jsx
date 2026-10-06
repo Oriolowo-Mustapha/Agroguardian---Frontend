@@ -29,6 +29,8 @@ import api from '../lib/axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import ModalShell from '../components/ui/ModalShell';
+import { LoadingState, EmptyState } from '../components/ui/States';
 
 const speciesIcons = {
   cattle: Beef,
@@ -54,7 +56,7 @@ const SeverityBadge = ({ severity }) => {
   
   return (
     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold uppercase ${config.color}`}>
-      <Icon className="h-3 w-3" />
+      <Icon className="h-3 w-3" aria-hidden="true" />
       {config.label}
     </span>
   );
@@ -75,7 +77,7 @@ const StatusBadge = ({ status }) => {
   
   return (
     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${config.color}`}>
-      <Icon className={`h-3 w-3 ${status === 'processing' ? 'animate-spin' : ''}`} />
+      <Icon className={`h-3 w-3 ${status === 'processing' ? 'animate-spin' : ''}`} aria-hidden="true" />
       {config.label}
     </span>
   );
@@ -113,11 +115,19 @@ const DiagnosisCard = ({ diagnosis, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all cursor-pointer group p-6"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+      className="bg-card rounded-2xl border border-border shadow-sm hover:shadow-lg transition-all cursor-pointer group p-4 sm:p-6"
     >
       <div className="flex items-start gap-4">
         {/* Thumbnail */}
-        <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-muted flex-shrink-0">
           {diagnosis.imageUrls?.[0] ? (
             <img 
               src={diagnosis.imageUrls[0]} 
@@ -126,7 +136,7 @@ const DiagnosisCard = ({ diagnosis, onClick }) => {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <SpeciesIcon className="h-8 w-8 text-gray-400" />
+              <SpeciesIcon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
             </div>
           )}
         </div>
@@ -135,14 +145,14 @@ const DiagnosisCard = ({ diagnosis, onClick }) => {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">
             <div>
-              <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-1">
+              <h3 className="font-bold text-foreground group-hover:text-primary transition-colors line-clamp-1">
                 {diagnosis.diagnosis}
               </h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {getLivestockLabel(diagnosis)} • {diagnosis.livestockId?.species || diagnosis.species || 'Unknown'}
               </p>
             </div>
-            <div className="flex flex-col gap-1 items-end">
+            <div className="flex flex-col shrink-0 gap-1 items-end">
               <StatusBadge status={diagnosis.status} />
               {diagnosis.status !== 'processing' && (
                 <SeverityBadge severity={diagnosis.severity} />
@@ -153,32 +163,32 @@ const DiagnosisCard = ({ diagnosis, onClick }) => {
           {diagnosis.symptoms?.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {diagnosis.symptoms.slice(0, 3).map((symptom, idx) => (
-                <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-lg text-xs">
+                <span key={idx} className="px-2 py-0.5 bg-muted text-muted-foreground rounded-lg text-xs">
                   {symptom}
                 </span>
               ))}
               {diagnosis.symptoms.length > 3 && (
-                <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-lg text-xs">
+                <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded-lg text-xs">
                   +{diagnosis.symptoms.length - 3} more
                 </span>
               )}
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
+                <Clock className="h-4 w-4" aria-hidden="true" />
                 {new Date(diagnosis.createdAt).toLocaleDateString()}
               </span>
               {diagnosis.confidence > 0 && (
                 <span className="flex items-center gap-1">
-                  <Activity className="h-4 w-4" />
+                  <Activity className="h-4 w-4" aria-hidden="true" />
                   {Math.round(diagnosis.confidence * 100)}% confidence
                 </span>
               )}
             </div>
-            <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-primary transition-colors" />
+            <ChevronRight className="h-5 w-5 text-muted-foreground/60 group-hover:text-primary transition-colors" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -232,289 +242,25 @@ const DiagnosisDetailsModal = ({ isOpen, onClose, diagnosisId, initialDiagnosis,
     : null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl max-h-[90vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="border-b border-gray-100 p-6 flex justify-between items-start gap-4">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="bg-primary/10 p-2 rounded-xl mt-0.5">
-              <Stethoscope className="h-6 w-6 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-xl font-bold text-gray-900 truncate">Diagnosis Details</h2>
-              <p className="text-sm text-gray-500 truncate">
-                {getLivestockLabel(d)} • {d?.livestockId?.species || d?.species || 'Unknown'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {d?.status && <StatusBadge status={d.status} />}
-            {d?.severity && d?.status !== 'processing' && <SeverityBadge severity={d.severity} />}
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-              <X className="h-5 w-5 text-gray-400" />
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {isLoading && !d ? (
-            <div className="space-y-3">
-              <div className="h-6 bg-gray-100 rounded animate-pulse" />
-              <div className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
-              <div className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
-            </div>
-          ) : (
-            <>
-              {/* Title */}
-              <div className="bg-gray-50 rounded-2xl p-5">
-                <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-xl overflow-hidden bg-white border border-gray-100 flex items-center justify-center flex-shrink-0">
-                    {d?.imageUrls?.[0] ? (
-                      <img src={d.imageUrls[0]} alt="Diagnosis" className="w-full h-full object-cover" />
-                    ) : (
-                      <SpeciesIcon className="h-8 w-8 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-lg font-black text-gray-900 leading-tight">
-                      {d?.diagnosis || 'Diagnosis'}
-                    </h3>
-                    <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {d?.createdAt ? new Date(d.createdAt).toLocaleString() : '—'}
-                      </span>
-                      {typeof d?.confidence === 'number' && (
-                        <span className="flex items-center gap-1">
-                          <Activity className="h-4 w-4" />
-                          {Math.round(d.confidence * 100)}% confidence
-                        </span>
-                      )}
-                    </div>
-
-                    {isBatch && (
-                      <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
-                        <div className="font-bold text-amber-900 flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4" />
-                          Batch case
-                        </div>
-                        <div className="text-amber-800 mt-1">
-                          Batch size: <span className="font-bold">{d.batchSize}</span>
-                          {d.affectedCount ? (
-                            <>
-                              {' '}• affected: <span className="font-bold">{d.affectedCount}</span>
-                              {affectedPercent !== null ? ` (${affectedPercent}%)` : ''}
-                            </>
-                          ) : (
-                            <> • affected: <span className="font-bold">Unknown</span></>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Images */}
-              {d?.imageUrls?.length > 0 && (
-                <div>
-                  <h4 className="font-bold text-gray-900 mb-3">Submitted Photos</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {d.imageUrls.map((url, idx) => (
-                      <a
-                        key={idx}
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block rounded-2xl overflow-hidden border border-gray-100 hover:shadow-md transition"
-                        title="Open image"
-                      >
-                        <img src={url} alt={`Diagnosis ${idx + 1}`} className="w-full aspect-square object-cover" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Symptoms */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white border border-gray-100 rounded-2xl p-5">
-                  <h4 className="font-bold text-gray-900 mb-3">Symptoms</h4>
-                  {d?.symptoms?.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {d.symptoms.map((s, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">No symptoms provided.</p>
-                  )}
-                </div>
-
-                {/* Key insights */}
-                <div className="bg-white border border-gray-100 rounded-2xl p-5">
-                  <h4 className="font-bold text-gray-900 mb-3">Key Insights</h4>
-                  <div className="space-y-2 text-sm text-gray-700">
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-gray-500">Urgency</span>
-                      <span className="font-bold">{d?.urgency || '—'}</span>
-                    </div>
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-gray-500">Vet required</span>
-                      <span className="font-bold">{d?.veterinaryRequired ? 'Yes' : 'No'}</span>
-                    </div>
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="text-gray-500">Quarantine</span>
-                      <span className="font-bold">{d?.quarantineRecommended ? 'Recommended' : 'Not required'}</span>
-                    </div>
-                    {typeof d?.followUpDays === 'number' && (
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="text-gray-500">Follow-up</span>
-                        <span className="font-bold">{d.followUpDays} day(s)</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {d?.spreadRisk && (
-                    <div className="mt-3 text-sm">
-                      <div className="font-bold text-gray-900">Spread risk</div>
-                      <div className="text-gray-600 mt-1">{d.spreadRisk}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Possible conditions */}
-              {d?.possibleConditions?.length > 0 && (
-                <div className="bg-white border border-gray-100 rounded-2xl p-5">
-                  <h4 className="font-bold text-gray-900 mb-3">Possible Conditions</h4>
-                  <div className="space-y-3">
-                    {d.possibleConditions.map((c, idx) => (
-                      <div key={idx} className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="font-bold text-gray-900">{c.name}</div>
-                          {c.description && <div className="text-sm text-gray-600">{c.description}</div>}
-                        </div>
-                        {typeof c.probability === 'number' && (
-                          <div className="text-sm font-bold text-gray-700 whitespace-nowrap">
-                            {Math.round(c.probability * 100)}%
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Treatment & prevention */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white border border-gray-100 rounded-2xl p-5">
-                  <h4 className="font-bold text-gray-900 mb-3">Treatment</h4>
-                  {d?.treatment?.length ? (
-                    <ol className="space-y-2 list-decimal list-inside text-sm text-gray-700">
-                      {d.treatment.map((t, idx) => (
-                        <li key={idx} className="leading-relaxed">{t}</li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="text-sm text-gray-500">No treatment steps available.</p>
-                  )}
-                </div>
-
-                <div className="bg-white border border-gray-100 rounded-2xl p-5">
-                  <h4 className="font-bold text-gray-900 mb-3">Prevention</h4>
-                  {d?.prevention?.length ? (
-                    <ul className="space-y-2 text-sm text-gray-700">
-                      {d.prevention.map((p, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" />
-                          <span className="leading-relaxed">{p}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-gray-500">No prevention advice available.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Treatment checklist */}
-              {Array.isArray(d?.treatmentPlan) && d.treatmentPlan.length > 0 && d?.status !== 'processing' && d?.status !== 'failed' && (
-                <div className="bg-white border border-gray-100 rounded-2xl p-5">
-                  <div className="flex items-center justify-between gap-3 mb-4">
-                    <h4 className="font-bold text-gray-900">Treatment Checklist</h4>
-                    <div className="text-xs font-bold text-gray-600">
-                      {d.treatmentPlan.filter(t => t.isCompleted).length}/{d.treatmentPlan.length} done
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    {d.treatmentPlan.map((step) => (
-                      <div
-                        key={String(step._id)}
-                        className={`flex items-start gap-3 p-3 rounded-xl border ${
-                          step.isCompleted ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'
-                        }`}
-                      >
-                        <button
-                          onClick={() => toggleTreatmentTaskMutation.mutate(String(step._id))}
-                          disabled={toggleTreatmentTaskMutation.isPending}
-                          className={`mt-0.5 h-6 w-6 rounded-lg border flex items-center justify-center ${
-                            step.isCompleted ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-gray-200'
-                          }`}
-                          title="Toggle task"
-                        >
-                          {step.isCompleted ? <CheckCircle2 className="h-4 w-4" /> : null}
-                        </button>
-
-                        <div className="flex-1 min-w-0">
-                          <div className={`text-sm font-bold ${step.isCompleted ? 'text-green-800 line-through' : 'text-gray-900'}`}>
-                            {step.task}
-                          </div>
-                          <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-bold text-gray-500">
-                            {step.timeframe ? <span className="px-2 py-0.5 bg-white rounded-lg border border-gray-200">{step.timeframe}</span> : null}
-                            {step.category ? <span className="px-2 py-0.5 bg-white rounded-lg border border-gray-200">{step.category}</span> : null}
-                            {step.priority ? <span className="px-2 py-0.5 bg-white rounded-lg border border-gray-200">{step.priority}</span> : null}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <p className="mt-3 text-xs text-gray-500">
-                    Tip: when all tasks are completed, the case will auto-mark as <span className="font-bold">Treated</span>. Mark <span className="font-bold">Resolved</span> only after the animal fully recovers.
-                  </p>
-                </div>
-              )}
-
-              {/* Additional notes */}
-              {d?.additionalNotes && (
-                <div className="bg-gray-50 rounded-2xl p-5">
-                  <h4 className="font-bold text-gray-900 mb-2">Additional Notes</h4>
-                  <p className="text-sm text-gray-700 leading-relaxed">{d.additionalNotes}</p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-gray-100 p-6 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Diagnosis Details"
+      description={`${getLivestockLabel(d)} • ${d?.livestockId?.species || d?.species || 'Unknown'}`}
+      icon={
+        <span className="bg-primary/10 p-2 rounded-xl">
+          <Stethoscope className="h-6 w-6 text-primary" aria-hidden="true" />
+        </span>
+      }
+      size="xl"
+      bodyClassName="space-y-6"
+      footer={
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2">
             {d?.status !== 'resolved' && (
               <Button
                 className="rounded-xl"
-                disabled={updateStatusMutation.isPending}
+                loading={updateStatusMutation.isPending}
                 onClick={() => updateStatusMutation.mutate('resolved')}
               >
                 Mark Resolved
@@ -525,8 +271,253 @@ const DiagnosisDetailsModal = ({ isOpen, onClose, diagnosisId, initialDiagnosis,
             Close
           </Button>
         </div>
-      </div>
-    </div>
+      }
+    >
+      {isLoading && !d ? (
+        <LoadingState label="Loading diagnosis details..." />
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {d?.status && <StatusBadge status={d.status} />}
+            {d?.severity && d?.status !== 'processing' && <SeverityBadge severity={d.severity} />}
+          </div>
+
+          {/* Title */}
+          <div className="bg-muted rounded-2xl p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-xl overflow-hidden bg-card border border-border flex items-center justify-center flex-shrink-0">
+                {d?.imageUrls?.[0] ? (
+                  <img src={d.imageUrls[0]} alt="Diagnosis" className="w-full h-full object-cover" />
+                ) : (
+                  <SpeciesIcon className="h-8 w-8 text-muted-foreground" aria-hidden="true" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-black text-foreground leading-tight">
+                  {d?.diagnosis || 'Diagnosis'}
+                </h3>
+                <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" aria-hidden="true" />
+                    {d?.createdAt ? new Date(d.createdAt).toLocaleString() : '—'}
+                  </span>
+                  {typeof d?.confidence === 'number' && (
+                    <span className="flex items-center gap-1">
+                      <Activity className="h-4 w-4" aria-hidden="true" />
+                      {Math.round(d.confidence * 100)}% confidence
+                    </span>
+                  )}
+                </div>
+
+                {isBatch && (
+                  <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">
+                    <div className="font-bold text-amber-900 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                      Batch case
+                    </div>
+                    <div className="text-amber-800 mt-1">
+                      Batch size: <span className="font-bold">{d.batchSize}</span>
+                      {d.affectedCount ? (
+                        <>
+                          {' '}• affected: <span className="font-bold">{d.affectedCount}</span>
+                          {affectedPercent !== null ? ` (${affectedPercent}%)` : ''}
+                        </>
+                      ) : (
+                        <> • affected: <span className="font-bold">Unknown</span></>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Images */}
+          {d?.imageUrls?.length > 0 && (
+            <div>
+              <h4 className="font-bold text-foreground mb-3">Submitted Photos</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {d.imageUrls.map((url, idx) => (
+                  <a
+                    key={idx}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-2xl overflow-hidden border border-border hover:shadow-md transition"
+                    title="Open image"
+                  >
+                    <img src={url} alt={`Diagnosis ${idx + 1}`} className="w-full max-w-full aspect-square object-cover" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Symptoms */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h4 className="font-bold text-foreground mb-3">Symptoms</h4>
+              {d?.symptoms?.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {d.symptoms.map((s, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-muted text-foreground rounded-full text-xs font-medium">
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No symptoms provided.</p>
+              )}
+            </div>
+
+            {/* Key insights */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h4 className="font-bold text-foreground mb-3">Key Insights</h4>
+              <div className="space-y-2 text-sm text-foreground">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-muted-foreground">Urgency</span>
+                  <span className="font-bold">{d?.urgency || '—'}</span>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-muted-foreground">Vet required</span>
+                  <span className="font-bold">{d?.veterinaryRequired ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-muted-foreground">Quarantine</span>
+                  <span className="font-bold">{d?.quarantineRecommended ? 'Recommended' : 'Not required'}</span>
+                </div>
+                {typeof d?.followUpDays === 'number' && (
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-muted-foreground">Follow-up</span>
+                    <span className="font-bold">{d.followUpDays} day(s)</span>
+                  </div>
+                )}
+              </div>
+
+              {d?.spreadRisk && (
+                <div className="mt-3 text-sm">
+                  <div className="font-bold text-foreground">Spread risk</div>
+                  <div className="text-muted-foreground mt-1">{d.spreadRisk}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Possible conditions */}
+          {d?.possibleConditions?.length > 0 && (
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h4 className="font-bold text-foreground mb-3">Possible Conditions</h4>
+              <div className="space-y-3">
+                {d.possibleConditions.map((c, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-foreground">{c.name}</div>
+                      {c.description && <div className="text-sm text-muted-foreground">{c.description}</div>}
+                    </div>
+                    {typeof c.probability === 'number' && (
+                      <div className="text-sm font-bold text-foreground whitespace-nowrap">
+                        {Math.round(c.probability * 100)}%
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Treatment & prevention */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h4 className="font-bold text-foreground mb-3">Treatment</h4>
+              {d?.treatment?.length ? (
+                <ol className="space-y-2 list-decimal list-inside text-sm text-foreground">
+                  {d.treatment.map((t, idx) => (
+                    <li key={idx} className="leading-relaxed">{t}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-muted-foreground">No treatment steps available.</p>
+              )}
+            </div>
+
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <h4 className="font-bold text-foreground mb-3">Prevention</h4>
+              {d?.prevention?.length ? (
+                <ul className="space-y-2 text-sm text-foreground">
+                  {d.prevention.map((p, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5" aria-hidden="true" />
+                      <span className="leading-relaxed">{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No prevention advice available.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Treatment checklist */}
+          {Array.isArray(d?.treatmentPlan) && d.treatmentPlan.length > 0 && d?.status !== 'processing' && d?.status !== 'failed' && (
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h4 className="font-bold text-foreground">Treatment Checklist</h4>
+                <div className="text-xs font-bold text-muted-foreground">
+                  {d.treatmentPlan.filter(t => t.isCompleted).length}/{d.treatmentPlan.length} done
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {d.treatmentPlan.map((step) => (
+                  <div
+                    key={String(step._id)}
+                    className={`flex items-start gap-3 p-3 rounded-xl border ${
+                      step.isCompleted ? 'bg-green-50 border-green-100' : 'bg-muted border-border'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggleTreatmentTaskMutation.mutate(String(step._id))}
+                      disabled={toggleTreatmentTaskMutation.isPending}
+                      aria-pressed={step.isCompleted}
+                      aria-label={`Mark "${step.task}" as ${step.isCompleted ? 'not completed' : 'completed'}`}
+                      className={`mt-0.5 h-6 w-6 rounded-lg border flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                        step.isCompleted ? 'bg-green-600 border-green-600 text-white' : 'bg-card border-border'
+                      }`}
+                    >
+                      {step.isCompleted ? <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> : null}
+                    </button>
+
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-sm font-bold ${step.isCompleted ? 'text-green-800 line-through' : 'text-foreground'}`}>
+                        {step.task}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-2 text-[10px] font-bold text-muted-foreground">
+                        {step.timeframe ? <span className="px-2 py-0.5 bg-card rounded-lg border border-border">{step.timeframe}</span> : null}
+                        {step.category ? <span className="px-2 py-0.5 bg-card rounded-lg border border-border">{step.category}</span> : null}
+                        {step.priority ? <span className="px-2 py-0.5 bg-card rounded-lg border border-border">{step.priority}</span> : null}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-3 text-xs text-muted-foreground">
+                Tip: when all tasks are completed, the case will auto-mark as <span className="font-bold">Treated</span>. Mark <span className="font-bold">Resolved</span> only after the animal fully recovers.
+              </p>
+            </div>
+          )}
+
+          {/* Additional notes */}
+          {d?.additionalNotes && (
+            <div className="bg-muted rounded-2xl p-5">
+              <h4 className="font-bold text-foreground mb-2">Additional Notes</h4>
+              <p className="text-sm text-foreground leading-relaxed">{d.additionalNotes}</p>
+            </div>
+          )}
+        </>
+      )}
+    </ModalShell>
   );
 };
 
@@ -616,226 +607,26 @@ const NewDiagnosisModal = ({ isOpen, onClose, farmId, onSuccess }) => {
     if (!isOpen) resetForm();
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const SelectedIcon = selectedLivestock ? (speciesIcons[selectedLivestock.species] || PawPrint) : PawPrint;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col">
-        {/* Header */}
-        <div className="border-b border-gray-100 p-6 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-xl">
-              <Stethoscope className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">AI Health Diagnosis</h2>
-              <p className="text-sm text-gray-500">Step {step} of 3</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="h-5 w-5 text-gray-400" />
-          </button>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="px-6 py-2">
-          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary transition-all" 
-              style={{ width: `${(step / 3) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-4 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              {error}
-            </div>
-          )}
-
-          {/* Step 1: Select Livestock */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-900">Select Animal</h3>
-              <p className="text-gray-500 text-sm">Choose the animal you want to diagnose</p>
-              
-              <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
-                {livestock?.map(animal => {
-                  const Icon = speciesIcons[animal.species] || PawPrint;
-                  const isSelected = selectedLivestock?._id === animal._id;
-                  
-                  return (
-                    <button
-                      key={animal._id}
-                      onClick={() => setSelectedLivestock(animal)}
-                      className={`p-4 rounded-xl border-2 text-left transition-all ${
-                        isSelected 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-gray-200 hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${isSelected ? 'bg-primary/20' : 'bg-gray-100'}`}>
-                          <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-gray-500'}`} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900">
-                            {animal.name || animal.tagId || `#${animal._id.slice(-4)}`}
-                          </p>
-                          <p className="text-xs text-gray-500 capitalize">
-                            {animal.breed || animal.species}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Upload Images */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-900">Upload Photos</h3>
-              <p className="text-gray-500 text-sm">
-                Take clear photos of the affected areas, posture, and visible symptoms
-              </p>
-
-              {/* Selected Animal Summary */}
-              <div className="bg-gray-50 rounded-xl p-4 flex items-center gap-3">
-                <SelectedIcon className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="font-bold text-gray-900">
-                    {selectedLivestock?.name || selectedLivestock?.tagId}
-                  </p>
-                  <p className="text-sm text-gray-500 capitalize">{selectedLivestock?.species}</p>
-                </div>
-              </div>
-
-              {/* Upload Area */}
-              <div
-                className="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                onClick={() => document.getElementById('diagnosis-images').click()}
-              >
-                <Camera className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="font-bold text-gray-900">Click to upload photos</p>
-                <p className="text-sm text-gray-500">Up to 5 images • JPG, PNG</p>
-                <input
-                  id="diagnosis-images"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageChange}
-                />
-              </div>
-
-              {/* Image Previews */}
-              {images.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                  {images.map((img, idx) => (
-                    <div key={idx} className="relative group">
-                      <img 
-                        src={img.preview} 
-                        alt={`Preview ${idx + 1}`}
-                        className="w-full aspect-square object-cover rounded-xl"
-                      />
-                      <button
-                        onClick={() => removeImage(idx)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 3: Additional Info */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-gray-900">Additional Information</h3>
-              <p className="text-gray-500 text-sm">
-                Provide more details to help the AI make an accurate diagnosis
-              </p>
-
-              {/* Summary */}
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <SelectedIcon className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="font-bold text-gray-900">
-                      {selectedLivestock?.name || selectedLivestock?.tagId}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {images.length} photo(s) uploaded
-                      {isBatch && ` • Batch of ${batchQuantity}`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2 overflow-x-auto py-2">
-                  {images.map((img, idx) => (
-                    <img
-                      key={idx}
-                      src={img.preview}
-                      alt=""
-                      className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Affected count for batch livestock */}
-              {isBatch && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                  <label className="text-sm font-bold text-amber-800 flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" />
-                    How many animals are affected? *
-                  </label>
-                  <p className="text-xs text-amber-700 mt-1 mb-2">
-                    This batch contains {batchQuantity} animals. Specify how many are showing symptoms.
-                  </p>
-                  <Input
-                    type="number"
-                    min="1"
-                    max={batchQuantity}
-                    required
-                    value={affectedCount}
-                    onChange={(e) => setAffectedCount(e.target.value)}
-                    placeholder={`Enter number (1 - ${batchQuantity})`}
-                    className="bg-white"
-                  />
-                </div>
-              )}
-
-              <div>
-                <label className="text-sm font-bold text-gray-700">
-                  Observed Symptoms (comma separated)
-                </label>
-                <textarea
-                  value={symptoms}
-                  onChange={(e) => setSymptoms(e.target.value)}
-                  placeholder="e.g., loss of appetite, limping, discharge from eyes..."
-                  className="mt-2 w-full min-h-[100px] bg-white border border-gray-200 rounded-xl p-4 text-sm"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="border-t border-gray-100 p-6 flex gap-4">
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="AI Health Diagnosis"
+      description={`Step ${step} of 3`}
+      icon={
+        <span className="bg-primary/10 p-2 rounded-xl">
+          <Stethoscope className="h-6 w-6 text-primary" aria-hidden="true" />
+        </span>
+      }
+      size="lg"
+      bodyClassName="space-y-4"
+      footer={
+        <div className="flex w-full gap-4">
           {step > 1 && (
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="flex-1 rounded-xl h-12"
               onClick={() => setStep(step - 1)}
             >
@@ -853,25 +644,220 @@ const NewDiagnosisModal = ({ isOpen, onClose, farmId, onSuccess }) => {
           ) : (
             <Button
               className="flex-1 rounded-xl h-12"
-              disabled={isSubmitting || images.length === 0}
+              loading={isSubmitting}
+              disabled={images.length === 0}
               onClick={handleSubmit}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Analyzing...
-                </>
-              ) : (
-                <>
-                  <Stethoscope className="h-4 w-4 mr-2" />
-                  Start Diagnosis
-                </>
-              )}
+              <Stethoscope className="h-4 w-4 mr-2" aria-hidden="true" />
+              Start Diagnosis
             </Button>
           )}
         </div>
+      }
+    >
+      {/* Progress Bar */}
+      <div className="h-2 bg-muted rounded-full overflow-hidden" role="progressbar" aria-valuenow={step} aria-valuemin={1} aria-valuemax={3} aria-label={`Step ${step} of 3`}>
+        <div
+          className="h-full bg-primary transition-all"
+          style={{ width: `${(step / 3) * 100}%` }}
+        />
       </div>
-    </div>
+
+      {error && (
+        <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl flex items-center gap-2 text-sm font-medium">
+          <AlertCircle className="h-5 w-5" aria-hidden="true" />
+          {error}
+        </div>
+      )}
+
+          {/* Step 1: Select Livestock */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-foreground">Select Animal</h3>
+              <p className="text-muted-foreground text-sm">Choose the animal you want to diagnose</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
+                {livestock?.map(animal => {
+                  const Icon = speciesIcons[animal.species] || PawPrint;
+                  const isSelected = selectedLivestock?._id === animal._id;
+                  
+                  return (
+                    <button
+                      key={animal._id}
+                      type="button"
+                      onClick={() => setSelectedLivestock(animal)}
+                      aria-pressed={isSelected}
+                      className={`p-4 rounded-xl border-2 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                        isSelected 
+                          ? 'border-primary bg-primary/10' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${isSelected ? 'bg-primary/20' : 'bg-muted'}`}>
+                          <Icon className={`h-6 w-6 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden="true" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground">
+                            {animal.name || animal.tagId || `#${animal._id.slice(-4)}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {animal.breed || animal.species}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Upload Images */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-foreground">Upload Photos</h3>
+              <p className="text-muted-foreground text-sm">
+                Take clear photos of the affected areas, posture, and visible symptoms
+              </p>
+
+              {/* Selected Animal Summary */}
+              <div className="bg-muted rounded-xl p-4 flex items-center gap-3">
+                <SelectedIcon className="h-8 w-8 text-primary" aria-hidden="true" />
+                <div>
+                  <p className="font-bold text-foreground">
+                    {selectedLivestock?.name || selectedLivestock?.tagId}
+                  </p>
+                  <p className="text-sm text-muted-foreground capitalize">{selectedLivestock?.species}</p>
+                </div>
+              </div>
+
+              {/* Upload Area */}
+              <div
+                role="button"
+                tabIndex={0}
+                aria-label="Upload diagnosis photos"
+                className="border-2 border-dashed border-border rounded-2xl p-6 sm:p-8 text-center cursor-pointer hover:border-primary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                onClick={() => document.getElementById('diagnosis-images').click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    document.getElementById('diagnosis-images').click();
+                  }
+                }}
+              >
+                <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-3" aria-hidden="true" />
+                <p className="font-bold text-foreground">Click to upload photos</p>
+                <p className="text-sm text-muted-foreground">Up to 5 images • JPG, PNG</p>
+                <input
+                  id="diagnosis-images"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  aria-label="Choose diagnosis photos"
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+              </div>
+
+              {/* Image Previews */}
+              {images.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                  {images.map((img, idx) => (
+                    <div key={idx} className="relative group">
+                      <img 
+                        src={img.preview} 
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full max-w-full aspect-square object-cover rounded-xl"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        aria-label={`Remove photo ${idx + 1}`}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+                      >
+                        <X className="h-3 w-3" aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: Additional Info */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-foreground">Additional Information</h3>
+              <p className="text-muted-foreground text-sm">
+                Provide more details to help the AI make an accurate diagnosis
+              </p>
+
+              {/* Summary */}
+              <div className="bg-muted rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <SelectedIcon className="h-8 w-8 shrink-0 text-primary" aria-hidden="true" />
+                  <div className="min-w-0">
+                    <p className="font-bold text-foreground truncate">
+                      {selectedLivestock?.name || selectedLivestock?.tagId}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {images.length} photo(s) uploaded
+                      {isBatch && ` • Batch of ${batchQuantity}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 overflow-x-auto py-2">
+                  {images.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={img.preview}
+                      alt=""
+                      className="w-12 h-12 max-w-full rounded-lg object-cover flex-shrink-0"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Affected count for batch livestock */}
+              {isBatch && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <label className="text-sm font-bold text-amber-800 flex items-center gap-2" htmlFor="diagnosis-affected-count">
+                    <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                    How many animals are affected? *
+                  </label>
+                  <p className="text-xs text-amber-700 mt-1 mb-2">
+                    This batch contains {batchQuantity} animals. Specify how many are showing symptoms.
+                  </p>
+                  <Input
+                    id="diagnosis-affected-count"
+                    type="number"
+                    min="1"
+                    max={batchQuantity}
+                    required
+                    value={affectedCount}
+                    onChange={(e) => setAffectedCount(e.target.value)}
+                    placeholder={`Enter number (1 - ${batchQuantity})`}
+                    className="bg-card"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-bold text-foreground" htmlFor="diagnosis-symptoms">
+                  Observed Symptoms (comma separated)
+                </label>
+                <textarea
+                  id="diagnosis-symptoms"
+                  value={symptoms}
+                  onChange={(e) => setSymptoms(e.target.value)}
+                  placeholder="e.g., loss of appetite, limping, discharge from eyes..."
+                  className="mt-2 w-full min-h-[100px] bg-card border border-border rounded-xl p-4 text-base sm:text-sm"
+                />
+              </div>
+            </div>
+          )}
+    </ModalShell>
   );
 };
 
@@ -921,15 +907,12 @@ const LivestockDiagnosisPage = () => {
 
   if (!farmId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <RefreshCw className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-gray-500 font-medium">Loading farms...</p>
-      </div>
+      <LoadingState label="Loading farms..." className="min-h-[60vh]" />
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       {/* New Diagnosis Modal */}
       <NewDiagnosisModal
         isOpen={showNewDiagnosis}
@@ -951,41 +934,47 @@ const LivestockDiagnosisPage = () => {
       />
 
       {/* Header */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-              <Stethoscope className="h-8 w-8 text-primary" />
+      <div className="bg-card rounded-3xl border border-border shadow-sm p-4 sm:p-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3">
+              <Stethoscope className="h-8 w-8 shrink-0 text-primary" aria-hidden="true" />
               AI Health Diagnosis
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-1">
               Upload photos for instant AI-powered health assessment
             </p>
           </div>
-          
-          <div className="flex gap-3">
+
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <select
               value={farmId || ''}
               onChange={(e) => setSearchParams({ farmId: e.target.value })}
-              className="h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl font-medium"
+              aria-label="Select farm"
+              className="h-12 px-4 bg-card border border-border rounded-xl font-medium text-base sm:text-sm"
             >
               {farms?.map(farm => (
                 <option key={farm._id} value={farm._id}>{farm.name}</option>
               ))}
             </select>
-            <Button onClick={() => refetch()} variant="outline" className="rounded-xl h-12">
-              <RefreshCw className="h-4 w-4" />
+            <Button
+              onClick={() => refetch()}
+              variant="outline"
+              className="rounded-xl h-12"
+              aria-label="Refresh diagnoses"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
             </Button>
 
             <Link to={`/vet-consultation?farmId=${encodeURIComponent(farmId)}`} className="inline-flex">
               <Button variant="outline" className="rounded-xl h-12 px-6">
-                <MessageCircle className="h-4 w-4 mr-2" />
+                <MessageCircle className="h-4 w-4 mr-2" aria-hidden="true" />
                 Vet AI
               </Button>
             </Link>
 
             <Button onClick={() => setShowNewDiagnosis(true)} className="rounded-xl h-12 px-6">
-              <Camera className="h-4 w-4 mr-2" />
+              <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
               New Diagnosis
             </Button>
           </div>
@@ -995,8 +984,8 @@ const LivestockDiagnosisPage = () => {
       {/* Processing Diagnoses */}
       {groupedDiagnoses.processing.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <Loader2 className="h-5 w-5 text-blue-500 animate-spin" aria-hidden="true" />
             Processing ({groupedDiagnoses.processing.length})
           </h2>
           <div className="space-y-4">
@@ -1014,8 +1003,8 @@ const LivestockDiagnosisPage = () => {
       {/* Active Diagnoses */}
       {groupedDiagnoses.active.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
             Active Issues ({groupedDiagnoses.active.length})
           </h2>
           <div className="space-y-4">
@@ -1033,8 +1022,8 @@ const LivestockDiagnosisPage = () => {
       {/* Resolved Diagnoses */}
       {groupedDiagnoses.resolved.length > 0 && (
         <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-green-500" aria-hidden="true" />
             Resolved ({groupedDiagnoses.resolved.length})
           </h2>
           <div className="space-y-4">
@@ -1051,25 +1040,20 @@ const LivestockDiagnosisPage = () => {
 
       {/* Empty State */}
       {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-32 bg-white rounded-2xl animate-pulse" />
-          ))}
-        </div>
+        <LoadingState label="Loading diagnoses..." />
       ) : diagnoses?.length === 0 && (
-        <div className="text-center py-24 bg-white rounded-3xl border border-gray-100">
-          <div className="bg-primary/10 h-24 w-24 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Stethoscope className="h-12 w-12 text-primary/50" />
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">No diagnoses yet</h3>
-          <p className="text-gray-500 mb-8 max-w-sm mx-auto">
-            Upload photos of your livestock for AI-powered health assessment
-          </p>
-          <Button onClick={() => setShowNewDiagnosis(true)} className="rounded-xl h-12 px-8">
-            <Camera className="h-4 w-4 mr-2" />
-            Start First Diagnosis
-          </Button>
-        </div>
+        <EmptyState
+          className="bg-card rounded-3xl border border-border"
+          icon={<Stethoscope className="h-12 w-12" aria-hidden="true" />}
+          title="No diagnoses yet"
+          description="Upload photos of your livestock for AI-powered health assessment"
+          action={
+            <Button onClick={() => setShowNewDiagnosis(true)} className="rounded-xl h-12 px-8">
+              <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
+              Start First Diagnosis
+            </Button>
+          }
+        />
       )}
     </div>
   );

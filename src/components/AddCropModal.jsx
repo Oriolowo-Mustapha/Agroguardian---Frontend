@@ -1,16 +1,15 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
-  X,
-  Plus,
   Loader2,
   Sprout,
-  ChevronDown,
   Search,
   Check
 } from 'lucide-react';
 import api from '../lib/axios';
 import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import ModalShell from './ui/ModalShell';
 
 const CATEGORIES = [
   { id: 'cereal', label: 'Cereals (Grains)' },
@@ -77,105 +76,103 @@ const AddCropModal = ({ isOpen, onClose, farmId }) => {
     });
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-[2.5rem] w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-        {/* Header */}
-        <div className="p-8 bg-primary text-white flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md">
-              <Sprout className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black tracking-tight leading-none">Register Crop</h2>
-              <p className="text-white/70 text-xs font-bold uppercase tracking-widest mt-1">Inventory Management</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-8 space-y-8">
-          {/* Step 1: Category Selection */}
-          <div className="space-y-4">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">1. Select Crop Category</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setSelectedCategory(cat.id);
-                    setSelectedCrop('');
-                  }}
-                  className={`p-3 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all border ${
-                    selectedCategory === cat.id
-                      ? 'bg-primary text-white border-primary shadow-lg scale-[1.02]'
-                      : 'bg-gray-50 text-gray-500 border-gray-100 hover:border-primary/30'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Step 2: Specific Crop Selection */}
-          {selectedCategory && (
-            <div className="space-y-4 animate-in slide-in-from-top-4 duration-300">
-              <div className="flex justify-between items-center">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">2. Identify Specific Crop</label>
-                {isLoadingRef && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
-              </div>
-              
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-primary transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder={`Search ${selectedCategory} varieties...`}
-                  className="w-full h-12 pl-12 pr-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-primary outline-none transition-all"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
-                {filteredCrops.map((crop) => (
-                  <button
-                    key={crop}
-                    onClick={() => setSelectedCrop(crop)}
-                    className={`flex items-center justify-between p-4 rounded-2xl text-xs font-bold transition-all border ${
-                      selectedCrop === crop
-                        ? 'bg-green-50 text-green-700 border-green-200 shadow-sm'
-                        : 'bg-white text-gray-600 border-gray-100 hover:bg-gray-50'
-                    }`}
-                  >
-                    {crop}
-                    {selectedCrop === crop && <Check className="h-4 w-4 text-green-600" />}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-8 bg-gray-50 border-t border-gray-100 flex gap-3">
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Register Crop"
+      description={<span className="text-xs font-bold uppercase tracking-widest">Inventory Management</span>}
+      icon={
+        <span className="rounded-xl bg-white/20 p-2 backdrop-blur-md">
+          <Sprout className="h-6 w-6" aria-hidden="true" />
+        </span>
+      }
+      size="md"
+      headerClassName="bg-primary text-white border-none"
+      footer={
+        <>
           <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-xs" onClick={onClose}>
             Discard
           </Button>
           <Button 
-            disabled={!selectedCrop || addCropMutation.isPending}
+            loading={addCropMutation.isPending}
+            disabled={!selectedCrop}
             onClick={handleAdd}
             className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20"
           >
-            {addCropMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Confirm Registration'}
+            Confirm Registration
           </Button>
+        </>
+      }
+    >
+      <div className="space-y-8">
+        {/* Step 1: Category Selection */}
+        <div className="space-y-4">
+          <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">1. Select Crop Category</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                aria-pressed={selectedCategory === cat.id}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  setSelectedCrop('');
+                }}
+                className={`p-3 rounded-2xl text-[10px] font-black uppercase tracking-tight transition-all border ${
+                  selectedCategory === cat.id
+                    ? 'bg-primary text-white border-primary shadow-lg scale-[1.02]'
+                    : 'bg-muted text-muted-foreground border-border hover:border-primary/30'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Step 2: Specific Crop Selection */}
+        {selectedCategory && (
+          <div className="space-y-4 motion-safe:animate-in motion-safe:slide-in-from-top-4 motion-safe:duration-300">
+            <div className="flex justify-between items-center gap-3">
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 min-w-0">2. Identify Specific Crop</label>
+              {isLoadingRef && <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" aria-hidden="true" />}
+            </div>
+            
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" aria-hidden="true" />
+              <Input 
+                type="text" 
+                aria-label="Search crop varieties"
+                placeholder={`Search ${selectedCategory} varieties...`}
+                className="h-12 pl-12 pr-4 rounded-2xl bg-muted border-border font-bold"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-200">
+              {filteredCrops.map((crop) => (
+                <button
+                  key={crop}
+                  type="button"
+                  aria-pressed={selectedCrop === crop}
+                  onClick={() => setSelectedCrop(crop)}
+                  className={`flex items-center justify-between gap-2 p-4 rounded-2xl text-xs font-bold transition-all border ${
+                    selectedCrop === crop
+                      ? 'bg-green-50 text-green-700 border-green-200 shadow-sm'
+                      : 'bg-card text-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <span className="min-w-0 truncate">{crop}</span>
+                  {selectedCrop === crop && <Check className="h-4 w-4 text-green-600 shrink-0" aria-hidden="true" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

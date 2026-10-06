@@ -1,7 +1,8 @@
 import React from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { X, Loader2, Search, Activity } from 'lucide-react';
+import { Search, Activity } from 'lucide-react';
 import api from '../lib/axios';
+import ModalShell from './ui/ModalShell';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
@@ -148,30 +149,31 @@ export default function DewormingQuickActionModal({
     setNotes('');
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 rounded-t-3xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 rounded-xl">
-                <Activity className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-gray-900">Log Deworming</h2>
-                <p className="text-sm text-gray-500">Record preventive care for your farm</p>
-              </div>
-            </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
-          </div>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Log Deworming"
+      description="Record preventive care for your farm"
+      size="lg"
+      icon={
+        <div className="p-2 bg-purple-100 rounded-xl">
+          <Activity className="h-5 w-5 text-purple-600" aria-hidden="true" />
         </div>
-
+      }
+      footer={
+        <>
+          <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={mutation.isPending}>
+            Cancel
+          </Button>
+          <Button type="button" className="flex-1 bg-primary hover:bg-primary/90" onClick={() => mutation.mutate()} loading={mutation.isPending}>
+            {mutation.isPending ? 'Saving...' : 'Save Deworming'}
+          </Button>
+        </>
+      }
+    >
         <form
-          className="p-6 space-y-6"
+          className="space-y-6"
           onSubmit={(e) => {
             e.preventDefault();
             mutation.mutate();
@@ -179,7 +181,7 @@ export default function DewormingQuickActionModal({
         >
           {/* Scope */}
           <div className="space-y-2">
-            <label className="block text-sm font-bold text-gray-700">Apply to</label>
+            <label className="block text-sm font-bold text-foreground">Apply to</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
                 { id: 'all', label: 'All active' },
@@ -190,27 +192,28 @@ export default function DewormingQuickActionModal({
                   key={opt.id}
                   type="button"
                   onClick={() => setScope(opt.id)}
+                  aria-pressed={scope === opt.id}
                   className={`px-4 py-3 rounded-xl text-sm font-bold border transition-all ${
                     scope === opt.id
                       ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40'
+                      : 'bg-card text-foreground border-border hover:border-primary/40'
                   }`}
                 >
                   {opt.label}
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-500">
-              Targeting: <span className="font-bold text-gray-800">{targetedLivestockCount}</span> livestock records (~{targetedAnimalsCount} animals)
+            <p className="text-xs text-muted-foreground">
+              Targeting: <span className="font-bold text-foreground">{targetedLivestockCount}</span> livestock records (~{targetedAnimalsCount} animals)
             </p>
           </div>
 
           {scope === 'species' && (
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700">Species</label>
+              <label className="block text-sm font-bold text-foreground">Species</label>
               <div className="flex flex-wrap gap-2">
                 {speciesOptions.length === 0 ? (
-                  <p className="text-sm text-gray-500">No active livestock found.</p>
+                  <p className="text-sm text-muted-foreground">No active livestock found.</p>
                 ) : (
                   speciesOptions.map((sp) => {
                     const selected = selectedSpecies.includes(sp);
@@ -223,10 +226,11 @@ export default function DewormingQuickActionModal({
                             selected ? prev.filter((x) => x !== sp) : [...prev, sp]
                           );
                         }}
+                        aria-pressed={selected}
                         className={`px-3 py-2 rounded-xl text-sm font-bold border transition-all capitalize ${
                           selected
                             ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-gray-700 border-gray-200 hover:border-primary/40'
+                            : 'bg-card text-foreground border-border hover:border-primary/40'
                         }`}
                       >
                         {sp}
@@ -240,9 +244,9 @@ export default function DewormingQuickActionModal({
 
           {scope === 'selected' && (
             <div className="space-y-3">
-              <label className="block text-sm font-bold text-gray-700">Select livestock</label>
+              <label className="block text-sm font-bold text-foreground">Select livestock</label>
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                 <Input
                   value={pickSearch}
                   onChange={(e) => setPickSearch(e.target.value)}
@@ -251,17 +255,17 @@ export default function DewormingQuickActionModal({
                 />
               </div>
 
-              <div className="max-h-56 overflow-y-auto border border-gray-200 rounded-2xl divide-y">
+              <div className="max-h-56 overflow-y-auto border border-border rounded-2xl divide-y">
                 {pickedLivestock.length === 0 ? (
-                  <div className="p-4 text-sm text-gray-500">No matching active livestock.</div>
+                  <div className="p-4 text-sm text-muted-foreground">No matching active livestock.</div>
                 ) : (
                   pickedLivestock.map((l) => {
                     const checked = selectedIds.includes(l._id);
                     return (
-                      <label key={l._id} className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-gray-50">
+                      <label key={l._id} className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-muted">
                         <div className="min-w-0">
-                          <p className="font-bold text-gray-900 truncate">{livestockLabel(l)}</p>
-                          <p className="text-xs text-gray-500 capitalize">{l.species}{l.breed ? ` • ${l.breed}` : ''}</p>
+                          <p className="font-bold text-foreground truncate">{livestockLabel(l)}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{l.species}{l.breed ? ` • ${l.breed}` : ''}</p>
                         </div>
                         <input
                           type="checkbox"
@@ -283,32 +287,32 @@ export default function DewormingQuickActionModal({
           {/* Deworming details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2 sm:col-span-2">
-              <label className="block text-sm font-bold text-gray-700">Product name *</label>
+              <label className="block text-sm font-bold text-foreground">Product name *</label>
               <Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="e.g., Albendazole" className="h-11 rounded-xl" />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700">Active ingredient</label>
+              <label className="block text-sm font-bold text-foreground">Active ingredient</label>
               <Input value={activeIngredient} onChange={(e) => setActiveIngredient(e.target.value)} placeholder="Optional" className="h-11 rounded-xl" />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700">Dosage *</label>
+              <label className="block text-sm font-bold text-foreground">Dosage *</label>
               <Input value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="e.g., 10mg/kg" className="h-11 rounded-xl" />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700">Date administered *</label>
+              <label className="block text-sm font-bold text-foreground">Date administered *</label>
               <Input type="date" value={dateAdministered} onChange={(e) => setDateAdministered(e.target.value)} className="h-11 rounded-xl" />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700">Next due date</label>
+              <label className="block text-sm font-bold text-foreground">Next due date</label>
               <Input type="date" value={nextDueDate} onChange={(e) => setNextDueDate(e.target.value)} className="h-11 rounded-xl" />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <label className="block text-sm font-bold text-gray-700">Target parasites</label>
+              <label className="block text-sm font-bold text-foreground">Target parasites</label>
               <Input
                 value={targetParasitesRaw}
                 onChange={(e) => setTargetParasitesRaw(e.target.value)}
@@ -318,45 +322,28 @@ export default function DewormingQuickActionModal({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-gray-700">Cost (₦)</label>
+              <label className="block text-sm font-bold text-foreground">Cost (₦)</label>
               <Input type="number" min="0" step="1" value={cost} onChange={(e) => setCost(e.target.value)} className="h-11 rounded-xl" />
             </div>
 
             <div className="space-y-2 sm:col-span-2">
-              <label className="block text-sm font-bold text-gray-700">Notes</label>
+              <label className="block text-sm font-bold text-foreground">Notes</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
-                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary outline-none"
+                className="w-full px-4 py-3 bg-background border border-border rounded-xl text-base sm:text-sm focus:ring-2 focus:ring-primary outline-none"
                 placeholder="Optional"
               />
             </div>
           </div>
 
           {formError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm font-medium rounded-xl p-3">
+            <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium rounded-xl p-3">
               {formError}
             </div>
           )}
-
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose} disabled={mutation.isPending}>
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90" disabled={mutation.isPending}>
-              {mutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Saving...
-                </>
-              ) : (
-                'Save Deworming'
-              )}
-            </Button>
-          </div>
         </form>
-      </div>
-    </div>
+    </ModalShell>
   );
 }

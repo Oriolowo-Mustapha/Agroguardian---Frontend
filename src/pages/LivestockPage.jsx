@@ -27,6 +27,7 @@ import api from '../lib/axios';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { LoadingState, ErrorState, EmptyState } from '../components/ui/States';
 import AddLivestockModal from '../components/AddLivestockModal';
 
 
@@ -89,7 +90,7 @@ const HealthBadge = ({ status }) => {
 
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${config.color}`}>
-      <Icon className="h-3 w-3" />
+      <Icon className="h-3 w-3" aria-hidden="true" />
       {config.label}
     </span>
   );
@@ -97,14 +98,14 @@ const HealthBadge = ({ status }) => {
 
 const StatCard = ({ title, value, icon, color, subtitle }) => (
   <Card className="border-none shadow-sm">
-    <CardContent className="p-6">
+    <CardContent className="p-4 sm:p-6">
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1 truncate">{title}</p>
-          <h3 className="text-2xl sm:text-3xl font-black text-gray-900 truncate">{value}</h3>
-          {subtitle && <p className="text-xs text-gray-500 mt-1 truncate">{subtitle}</p>}
+          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-1 truncate">{title}</p>
+          <h3 className="text-2xl sm:text-3xl font-black text-foreground truncate">{value}</h3>
+          {subtitle && <p className="text-xs text-muted-foreground mt-1 truncate">{subtitle}</p>}
         </div>
-        <div className={`p-4 rounded-2xl ${color} shrink-0`}>
+        <div aria-hidden="true" className={`p-4 rounded-2xl ${color} shrink-0`}>
           {icon ? React.createElement(icon, { className: 'h-6 w-6 text-white' }) : null}
         </div>
       </div>
@@ -256,24 +257,19 @@ const LivestockPage = () => {
   }, [activeLivestock, countAnimals]);
 
   if (!farmId) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <RefreshCw className="h-10 w-10 text-primary animate-spin" />
-        <p className="text-gray-500 font-medium">Loading farms...</p>
-      </div>
-    );
+    return <LoadingState label="Loading farms..." className="min-h-[60vh]" />;
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 motion-safe:animate-in motion-safe:fade-in duration-500">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-            <PawPrint className="h-8 w-8 text-primary" />
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-card p-6 sm:p-8 rounded-[2.5rem] border border-border shadow-sm">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-3">
+            <PawPrint className="h-8 w-8 text-primary shrink-0" aria-hidden="true" />
             Livestock Management
           </h1>
-          <p className="text-gray-500 mt-1 font-medium">
+          <p className="text-muted-foreground mt-1 font-medium">
             Monitor health, track growth, and manage your farm animals
           </p>
         </div>
@@ -282,7 +278,8 @@ const LivestockPage = () => {
           <select
             value={farmId || ''}
             onChange={(e) => setSearchParams({ farmId: e.target.value })}
-            className="h-12 px-4 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-primary outline-none"
+            aria-label="Select farm"
+            className="h-12 px-4 bg-muted border border-border rounded-xl font-medium text-base focus:ring-2 focus:ring-primary outline-none w-full sm:w-auto"
           >
             {farms?.map((farm) => (
               <option key={farm._id} value={farm._id}>
@@ -294,7 +291,7 @@ const LivestockPage = () => {
             onClick={() => setIsModalOpen(true)}
             className="rounded-2xl h-12 px-6 font-bold shadow-lg shadow-primary/20"
           >
-            <Plus className="mr-2 h-5 w-5" />
+            <Plus className="mr-2 h-5 w-5" aria-hidden="true" />
             Add Livestock
           </Button>
         </div>
@@ -337,75 +334,75 @@ const LivestockPage = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <Link 
           to={`/livestock-feeding?farmId=${farmId}`}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group"
+          className="bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 rounded-xl group-hover:bg-amber-200 transition-colors">
+          <div className="flex items-center gap-3 min-w-0">
+            <div aria-hidden="true" className="p-2 bg-amber-100 rounded-xl group-hover:bg-amber-200 transition-colors shrink-0">
               <Scale className="h-5 w-5 text-amber-600" />
             </div>
-            <div>
-              <p className="font-bold text-gray-900">Feeding</p>
-              <p className="text-xs text-gray-500">Manage feed records</p>
+            <div className="min-w-0">
+              <p className="font-bold text-foreground">Feeding</p>
+              <p className="text-xs text-muted-foreground">Manage feed records</p>
             </div>
           </div>
         </Link>
         <Link 
           to={`/livestock-breeding?farmId=${farmId}`}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group"
+          className="bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-pink-100 rounded-xl group-hover:bg-pink-200 transition-colors">
+          <div className="flex items-center gap-3 min-w-0">
+            <div aria-hidden="true" className="p-2 bg-pink-100 rounded-xl group-hover:bg-pink-200 transition-colors shrink-0">
               <Heart className="h-5 w-5 text-pink-600" />
             </div>
-            <div>
-              <p className="font-bold text-gray-900">Breeding</p>
-              <p className="text-xs text-gray-500">Track pregnancies</p>
+            <div className="min-w-0">
+              <p className="font-bold text-foreground">Breeding</p>
+              <p className="text-xs text-muted-foreground">Track pregnancies</p>
             </div>
           </div>
         </Link>
         <Link 
           to={`/livestock-inventory?farmId=${farmId}`}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group"
+          className="bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors">
+          <div className="flex items-center gap-3 min-w-0">
+            <div aria-hidden="true" className="p-2 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors shrink-0">
               <Activity className="h-5 w-5 text-blue-600" />
             </div>
-            <div>
-              <p className="font-bold text-gray-900">Inventory</p>
-              <p className="text-xs text-gray-500">Sales & purchases</p>
+            <div className="min-w-0">
+              <p className="font-bold text-foreground">Inventory</p>
+              <p className="text-xs text-muted-foreground">Sales & purchases</p>
             </div>
           </div>
         </Link>
         <Link 
           to={`/vet-consultation?farmId=${farmId}`}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group"
+          className="bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors">
+          <div className="flex items-center gap-3 min-w-0">
+            <div aria-hidden="true" className="p-2 bg-green-100 rounded-xl group-hover:bg-green-200 transition-colors shrink-0">
               <Syringe className="h-5 w-5 text-green-600" />
             </div>
-            <div>
-              <p className="font-bold text-gray-900">Vet AI</p>
-              <p className="text-xs text-gray-500">Consult AI vet</p>
+            <div className="min-w-0">
+              <p className="font-bold text-foreground">Vet AI</p>
+              <p className="text-xs text-muted-foreground">Consult AI vet</p>
             </div>
           </div>
         </Link>
 
         <Link
           to={`/livestock-health?farmId=${encodeURIComponent(farmId)}`}
-          className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group"
+          className="bg-card p-4 rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/20 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors">
+          <div className="flex items-center gap-3 min-w-0">
+            <div aria-hidden="true" className="p-2 bg-purple-100 rounded-xl group-hover:bg-purple-200 transition-colors shrink-0">
               <Heart className="h-5 w-5 text-purple-600" />
             </div>
-            <div>
-              <p className="font-bold text-gray-900">Health Records</p>
-              <p className="text-xs text-gray-500">View & add records</p>
+            <div className="min-w-0">
+              <p className="font-bold text-foreground">Health Records</p>
+              <p className="text-xs text-muted-foreground">View & add records</p>
             </div>
           </div>
         </Link>
@@ -413,16 +410,16 @@ const LivestockPage = () => {
 
       {/* Vaccination Alerts */}
       {upcomingVaccinations.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-6" role="status">
           <div className="flex items-center gap-3 mb-4">
-            <Syringe className="h-5 w-5 text-amber-600" />
+            <Syringe className="h-5 w-5 text-amber-600 shrink-0" aria-hidden="true" />
             <h3 className="font-bold text-amber-900">Upcoming Vaccinations</h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {upcomingVaccinations.map((vax, idx) => (
-              <div key={vax?._id || idx} className="bg-white rounded-xl p-4 border border-amber-100">
-                <p className="font-bold text-gray-900">{vax?.vaccineName || 'Vaccination'}</p>
-                <p className="text-sm text-gray-500">
+              <div key={vax?._id || idx} className="bg-card rounded-xl p-4 border border-amber-100 min-w-0">
+                <p className="font-bold text-foreground truncate">{vax?.vaccineName || 'Vaccination'}</p>
+                <p className="text-sm text-muted-foreground">
                   {vax?.livestockId?.name || vax?.livestockId?.tagId || 'Animal'} - Due:{' '}
                   {vax?.nextDueDate ? new Date(vax.nextDueDate).toLocaleDateString() : '—'}
                 </p>
@@ -435,11 +432,13 @@ const LivestockPage = () => {
       {/* Species Quick Filter */}
       <div className="flex flex-wrap gap-2">
         <button
+          type="button"
           onClick={() => setSpeciesFilter('all')}
+          aria-pressed={speciesFilter === 'all'}
           className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
             speciesFilter === 'all' 
               ? 'bg-primary text-white' 
-              : 'bg-white text-gray-600 border border-gray-200 hover:border-primary'
+              : 'bg-card text-muted-foreground border border-border hover:border-primary'
           }`}
         >
           All Species
@@ -449,14 +448,16 @@ const LivestockPage = () => {
           return (
             <button
               key={species}
+              type="button"
               onClick={() => setSpeciesFilter(species)}
+              aria-pressed={speciesFilter === species}
               className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${
                 speciesFilter === species 
                   ? 'bg-primary text-white' 
-                  : 'bg-white text-gray-600 border border-gray-200 hover:border-primary'
+                  : 'bg-card text-muted-foreground border border-border hover:border-primary'
               }`}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4" aria-hidden="true" />
               {species.charAt(0).toUpperCase() + species.slice(1)} ({count})
             </button>
           );
@@ -464,51 +465,58 @@ const LivestockPage = () => {
       </div>
 
       {/* Search & View Controls */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4">
         <div className="relative w-full lg:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
           <Input
             placeholder="Search by name, tag ID, or breed..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search livestock"
             className="pl-12 h-12 rounded-xl"
           />
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex bg-white p-1 rounded-xl border border-gray-100">
+          <div className="flex bg-card p-1 rounded-xl border border-border">
             <button
+              type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-2.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-gray-400'}`}
+              aria-label="Grid view"
+              aria-pressed={viewMode === 'grid'}
+              className={`p-2.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <LayoutGrid className="h-5 w-5" />
+              <LayoutGrid className="h-5 w-5" aria-hidden="true" />
             </button>
             <button
+              type="button"
               onClick={() => setViewMode('list')}
-              className={`p-2.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-primary text-white' : 'text-gray-400'}`}
+              aria-label="List view"
+              aria-pressed={viewMode === 'list'}
+              className={`p-2.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-primary text-white' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <List className="h-5 w-5" />
+              <List className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
-          <Button variant="outline" onClick={() => refetch()} className="h-10 rounded-xl">
-            <RefreshCw className="h-4 w-4" />
+          <Button variant="outline" onClick={() => refetch()} aria-label="Refresh livestock" className="h-10 rounded-xl">
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
           </Button>
         </div>
       </div>
 
       {/* Livestock Grid/List */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" role="status" aria-label="Loading livestock">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-64 bg-white rounded-3xl animate-pulse" />
+            <div key={i} className="h-64 bg-muted rounded-3xl motion-safe:animate-pulse" />
           ))}
         </div>
       ) : error ? (
-        <div className="text-center py-16 bg-white rounded-3xl">
-          <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Failed to load livestock</h3>
-          <p className="text-gray-500 mb-4">{error.message}</p>
-          <Button onClick={() => refetch()}>Retry</Button>
-        </div>
+        <ErrorState
+          title="Failed to load livestock"
+          message={error.message}
+          onRetry={() => refetch()}
+          className="bg-card rounded-3xl border border-border"
+        />
       ) : filteredLivestock.length > 0 ? (
         <div className={viewMode === 'grid' 
           ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
@@ -527,22 +535,23 @@ const LivestockPage = () => {
                 onClick={(e) => {
                   if (!itemId) e.preventDefault();
                 }}
-                className={`block bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-lg transition-all group ${
+                aria-label={`View ${item?.name || item?.tagId || 'livestock'} details`}
+                className={`block bg-card rounded-3xl border border-border shadow-sm hover:shadow-lg transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   viewMode === 'list' ? 'p-4' : 'p-6'
                 }`}
               >
-                <div className={viewMode === 'list' ? 'flex items-center gap-4' : 'space-y-4'}>
+                <div className={viewMode === 'list' ? 'flex items-center gap-4 min-w-0' : 'space-y-4'}>
                   {/* Image/Avatar */}
-                  <div className={`relative ${viewMode === 'list' ? 'w-16 h-16' : 'h-40 w-full'} rounded-2xl overflow-hidden bg-gray-100`}>
+                  <div className={`relative shrink-0 ${viewMode === 'list' ? 'w-16 h-16' : 'h-40 w-full'} rounded-2xl overflow-hidden bg-muted`}>
                     {item.imageUrls?.[0] ? (
                       <img 
                         src={item.imageUrls[0]} 
                         alt={item.name || item.tagId} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                        className="w-full h-full object-cover transition-transform group-hover:scale-110"
                       />
                     ) : (
                       <div className={`w-full h-full ${color} flex items-center justify-center`}>
-                        <Icon className="h-12 w-12 text-white/80" />
+                        <Icon className="h-12 w-12 text-white/80" aria-hidden="true" />
                       </div>
                     )}
                     {item.trackingType === 'batch' && (
@@ -553,13 +562,13 @@ const LivestockPage = () => {
                   </div>
 
                   {/* Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-foreground group-hover:text-primary transition-colors truncate">
                           {item?.name || item?.tagId || `${item?.species || 'livestock'} #${String(itemId || '').slice(-4)}`}
                         </h3>
-                        <p className="text-sm text-gray-500 capitalize">
+                        <p className="text-sm text-muted-foreground capitalize truncate">
                           {item.breed || item.species} {item.gender && `• ${item.gender}`}
                         </p>
                       </div>
@@ -576,15 +585,15 @@ const LivestockPage = () => {
                     {viewMode === 'grid' && (
                       <div className="grid grid-cols-2 gap-2 mt-4">
                         {item.weight && (
-                          <div className="bg-gray-50 rounded-xl p-2 text-center">
-                            <Scale className="h-4 w-4 text-gray-400 mx-auto mb-1" />
-                            <p className="text-sm font-bold text-gray-900">{item.weight} kg</p>
+                          <div className="bg-muted rounded-xl p-2 text-center min-w-0">
+                            <Scale className="h-4 w-4 text-muted-foreground mx-auto mb-1" aria-hidden="true" />
+                            <p className="text-sm font-bold text-foreground truncate">{item.weight} kg</p>
                           </div>
                         )}
                         {item.dateOfBirth && (
-                          <div className="bg-gray-50 rounded-xl p-2 text-center">
-                            <Calendar className="h-4 w-4 text-gray-400 mx-auto mb-1" />
-                            <p className="text-sm font-bold text-gray-900">
+                          <div className="bg-muted rounded-xl p-2 text-center min-w-0">
+                            <Calendar className="h-4 w-4 text-muted-foreground mx-auto mb-1" aria-hidden="true" />
+                            <p className="text-sm font-bold text-foreground truncate">
                               {formatAgeShort(item.dateOfBirth, item.species)}
                             </p>
                           </div>
@@ -592,11 +601,11 @@ const LivestockPage = () => {
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-50">
-                      <span className={`px-2 py-1 rounded-lg text-xs font-bold ${color} text-white capitalize`}>
+                    <div className="flex items-center justify-between gap-2 mt-4 pt-4 border-t border-border">
+                      <span className={`px-2 py-1 rounded-lg text-xs font-bold ${color} text-white capitalize shrink-0`}>
                         {item.species}
                       </span>
-                      <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all shrink-0" aria-hidden="true" />
                     </div>
                   </div>
                 </div>
@@ -605,24 +614,22 @@ const LivestockPage = () => {
           })}
         </div>
       ) : (
-        <div className="text-center py-24 bg-white rounded-3xl border border-gray-100">
-          <div className="bg-primary/10 h-24 w-24 rounded-full flex items-center justify-center mx-auto mb-6">
-            <PawPrint className="h-12 w-12 text-primary/50" />
-          </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            {searchQuery || speciesFilter !== 'all' ? 'No matches found' : 'No livestock registered'}
-          </h3>
-          <p className="text-gray-500 mb-8 max-w-sm mx-auto">
-            {searchQuery || speciesFilter !== 'all' 
+        <EmptyState
+          icon={<PawPrint className="h-12 w-12" aria-hidden="true" />}
+          title={searchQuery || speciesFilter !== 'all' ? 'No matches found' : 'No livestock registered'}
+          description={
+            searchQuery || speciesFilter !== 'all' 
               ? 'Try adjusting your search or filters'
               : 'Start by adding your first animal to track health, growth, and breeding'
-            }
-          </p>
-          <Button onClick={() => setIsModalOpen(true)} className="rounded-2xl h-12 px-8">
-            <Plus className="mr-2 h-5 w-5" />
-            Add Livestock
-          </Button>
-        </div>
+          }
+          action={
+            <Button onClick={() => setIsModalOpen(true)} className="rounded-2xl h-12 px-8">
+              <Plus className="mr-2 h-5 w-5" aria-hidden="true" />
+              Add Livestock
+            </Button>
+          }
+          className="bg-card rounded-3xl border border-border"
+        />
       )}
 
       {/* Modals */}

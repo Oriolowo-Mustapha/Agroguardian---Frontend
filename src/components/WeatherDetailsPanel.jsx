@@ -39,12 +39,12 @@ const iconUrl = (icon, size = 2) => {
 };
 
 const Metric = ({ icon: Icon, label, value }) => (
-  <div className="bg-gray-50 border border-gray-100 rounded-2xl p-4">
-    <div className="flex items-center gap-2 text-gray-500 mb-1">
-      {Icon ? <Icon className="h-4 w-4" /> : null}
-      <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+  <div className="bg-muted border border-border rounded-2xl p-4">
+    <div className="flex items-center gap-2 text-muted-foreground mb-1">
+      {Icon ? <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> : null}
+      <span className="text-[10px] font-black uppercase tracking-widest truncate">{label}</span>
     </div>
-    <div className="text-sm font-black text-gray-900">{value ?? '—'}</div>
+    <div className="text-sm font-black text-foreground">{value ?? '—'}</div>
   </div>
 );
 
@@ -133,43 +133,43 @@ export default function WeatherDetailsPanel({ weather, riskReport }) {
 
   return (
     <Card className="border-none shadow-sm rounded-[2.5rem] overflow-hidden">
-      <CardHeader className="bg-sky-50/60 border-b border-sky-100 px-8 py-6">
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CloudSun className="h-5 w-5 text-sky-600" />
-            <span className="font-black text-gray-900 uppercase tracking-wider text-sm">Full Weather Details</span>
+      <CardHeader className="bg-sky-50/60 border-b border-sky-100 px-4 py-4 sm:px-8 sm:py-6">
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <CloudSun className="h-5 w-5 text-sky-600 shrink-0" aria-hidden="true" />
+            <span className="font-black text-foreground uppercase tracking-wider text-sm truncate">Full Weather Details</span>
           </div>
           {weather?.timestamp ? (
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold">
-              <Clock className="h-4 w-4" />
-              <span>Synced {new Date(weather.timestamp).toLocaleString()}</span>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-bold min-w-0">
+              <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="truncate">Synced {new Date(weather.timestamp).toLocaleString()}</span>
             </div>
           ) : null}
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="p-8 space-y-10">
+      <CardContent className="p-4 sm:p-8 space-y-8 sm:space-y-10">
         {/* Current */}
         {isOpenWeatherCurrent(currentRaw) && (
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 min-w-0">
                 {currentIcon ? (
-                  <img src={iconUrl(currentIcon, 4)} alt="icon" className="h-20 w-20" />
+                  <img src={iconUrl(currentIcon, 4)} alt="" aria-hidden="true" className="h-20 w-20 shrink-0" />
                 ) : (
-                  <div className="h-20 w-20 rounded-2xl bg-white border border-gray-100 flex items-center justify-center">
-                    <CloudSun className="h-10 w-10 text-sky-600" />
+                  <div className="h-20 w-20 shrink-0 rounded-2xl bg-card border border-border flex items-center justify-center">
+                    <CloudSun className="h-10 w-10 text-sky-600" aria-hidden="true" />
                   </div>
                 )}
-                <div>
-                  <div className="flex items-center gap-2 text-gray-600 font-bold">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>{locationLabel}</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-muted-foreground font-bold min-w-0">
+                    <MapPin className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                    <span className="truncate">{locationLabel}</span>
                   </div>
-                  <div className="mt-1 text-4xl font-black text-gray-900 tracking-tighter">
+                  <div className="mt-1 text-3xl sm:text-4xl font-black text-foreground tracking-tighter">
                     {Number.isFinite(currentRaw?.main?.temp) ? `${Math.round(currentRaw.main.temp)}°C` : '—'}
                   </div>
-                  <div className="text-sm text-gray-600 font-bold capitalize">{currentDesc || '—'}</div>
+                  <div className="text-sm text-muted-foreground font-bold capitalize">{currentDesc || '—'}</div>
                 </div>
               </div>
 
@@ -203,29 +203,29 @@ export default function WeatherDetailsPanel({ weather, riskReport }) {
         {/* Simplified fallback (when raw payload isn't returned by API) */}
         {!isOpenWeatherCurrent(currentRaw) && !!simplifiedCurrent && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Current Summary</h3>
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">Limited data</span>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h3 className="text-sm font-black text-foreground uppercase tracking-wider">Current Summary</h3>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Limited data</span>
             </div>
 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 min-w-0">
                 {(simplifiedIcon || currentIcon) ? (
-                  <img src={iconUrl(simplifiedIcon || currentIcon, 4)} alt="icon" className="h-20 w-20" />
+                  <img src={iconUrl(simplifiedIcon || currentIcon, 4)} alt="" aria-hidden="true" className="h-20 w-20 shrink-0" />
                 ) : (
-                  <div className="h-20 w-20 rounded-2xl bg-white border border-gray-100 flex items-center justify-center">
-                    <CloudSun className="h-10 w-10 text-sky-600" />
+                  <div className="h-20 w-20 shrink-0 rounded-2xl bg-card border border-border flex items-center justify-center">
+                    <CloudSun className="h-10 w-10 text-sky-600" aria-hidden="true" />
                   </div>
                 )}
-                <div>
-                  <div className="flex items-center gap-2 text-gray-600 font-bold">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>{farmLocationLabel || '—'}</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-muted-foreground font-bold min-w-0">
+                    <MapPin className="h-4 w-4 text-primary shrink-0" aria-hidden="true" />
+                    <span className="truncate">{farmLocationLabel || '—'}</span>
                   </div>
-                  <div className="mt-1 text-4xl font-black text-gray-900 tracking-tighter">
+                  <div className="mt-1 text-3xl sm:text-4xl font-black text-foreground tracking-tighter">
                     {simplifiedCurrent?.temperature != null ? `${Math.round(Number(simplifiedCurrent.temperature))}°C` : '—'}
                   </div>
-                  <div className="text-sm text-gray-600 font-bold capitalize">{simplifiedDesc || currentDesc || '—'}</div>
+                  <div className="text-sm text-muted-foreground font-bold capitalize">{simplifiedDesc || currentDesc || '—'}</div>
                 </div>
               </div>
 
@@ -235,11 +235,11 @@ export default function WeatherDetailsPanel({ weather, riskReport }) {
               </div>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-              <div className="bg-amber-600 text-white rounded-xl p-2">
-                <Info className="h-4 w-4" />
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3" role="note">
+              <div className="bg-amber-600 text-white rounded-xl p-2 shrink-0">
+                <Info className="h-4 w-4" aria-hidden="true" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-black text-amber-900">Full weather report not available</p>
                 <p className="text-xs text-amber-800 font-medium mt-1">
                   The backend response didn’t include raw OpenWeather fields (like pressure, POP, rain, sunrise/sunset, 3‑hour forecast).
@@ -253,32 +253,32 @@ export default function WeatherDetailsPanel({ weather, riskReport }) {
         {/* Forecast */}
         {isOpenWeatherForecastList(forecastRaw) && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">3‑Hour Forecast (Next days)</h3>
-              <p className="text-xs text-gray-500 font-bold">{forecastRaw.length} data points</p>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <h3 className="text-sm font-black text-foreground uppercase tracking-wider">3‑Hour Forecast (Next days)</h3>
+              <p className="text-xs text-muted-foreground font-bold">{forecastRaw.length} data points</p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6" role="list" aria-label="Forecast days">
               {forecastGroups.map((g) => (
-                <div key={g.date} className="border border-gray-100 rounded-3xl overflow-hidden">
-                  <div className="bg-gray-50 px-6 py-3 flex items-center justify-between">
-                    <div className="text-sm font-black text-gray-900">
+                <div key={g.date} role="listitem" className="border border-border rounded-3xl overflow-hidden">
+                  <div className="bg-muted px-4 py-3 flex items-center justify-between gap-2 sm:px-6">
+                    <div className="text-sm font-black text-foreground min-w-0 truncate">
                       {new Date(g.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                     </div>
-                    <div className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">{g.items.length} slots</div>
+                    <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest shrink-0">{g.items.length} slots</div>
                   </div>
 
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-left">
                       <thead>
-                        <tr className="text-[10px] uppercase tracking-widest text-gray-400 border-b border-gray-100">
-                          <th className="px-6 py-3 font-black">Time</th>
-                          <th className="px-6 py-3 font-black">Condition</th>
-                          <th className="px-6 py-3 font-black">Temp</th>
-                          <th className="px-6 py-3 font-black">Humidity</th>
-                          <th className="px-6 py-3 font-black">Wind</th>
-                          <th className="px-6 py-3 font-black">Rain</th>
-                          <th className="px-6 py-3 font-black">POP</th>
+                        <tr className="text-[10px] uppercase tracking-widest text-muted-foreground border-b border-border">
+                          <th scope="col" className="px-3 py-3 font-black sm:px-6">Time</th>
+                          <th scope="col" className="px-3 py-3 font-black sm:px-6">Condition</th>
+                          <th scope="col" className="px-3 py-3 font-black sm:px-6">Temp</th>
+                          <th scope="col" className="px-3 py-3 font-black sm:px-6">Humidity</th>
+                          <th scope="col" className="px-3 py-3 font-black sm:px-6">Wind</th>
+                          <th scope="col" className="px-3 py-3 font-black sm:px-6">Rain</th>
+                          <th scope="col" className="px-3 py-3 font-black sm:px-6">POP</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -292,30 +292,30 @@ export default function WeatherDetailsPanel({ weather, riskReport }) {
                           const windC = degToCompass(it?.wind?.deg);
 
                           return (
-                            <tr key={it.dt} className="border-b border-gray-50 last:border-0">
-                              <td className="px-6 py-3 text-sm font-black text-gray-900 whitespace-nowrap">{time}</td>
-                              <td className="px-6 py-3">
+                            <tr key={it.dt} className="border-b border-border/50 last:border-0">
+                              <td className="px-3 py-3 text-sm font-black text-foreground whitespace-nowrap sm:px-6">{time}</td>
+                              <td className="px-3 py-3 sm:px-6">
                                 <div className="flex items-center gap-2 whitespace-nowrap">
-                                  {icon ? <img src={iconUrl(icon, 2)} alt="" className="h-8 w-8" /> : null}
-                                  <span className="text-sm font-bold text-gray-700 capitalize">{desc || '—'}</span>
+                                  {icon ? <img src={iconUrl(icon, 2)} alt="" aria-hidden="true" className="h-8 w-8" /> : null}
+                                  <span className="text-sm font-bold text-foreground capitalize">{desc || '—'}</span>
                                 </div>
                               </td>
-                              <td className="px-6 py-3 text-sm font-bold text-gray-700 whitespace-nowrap">
+                              <td className="px-3 py-3 text-sm font-bold text-foreground whitespace-nowrap sm:px-6">
                                 {Number.isFinite(it?.main?.temp) ? `${Math.round(it.main.temp)}°C` : '—'}
                                 {Number.isFinite(it?.main?.feels_like) ? (
-                                  <span className="text-[10px] text-gray-400 font-black ml-2">feels {Math.round(it.main.feels_like)}°</span>
+                                  <span className="text-[10px] text-muted-foreground font-black ml-2">feels {Math.round(it.main.feels_like)}°</span>
                                 ) : null}
                               </td>
-                              <td className="px-6 py-3 text-sm font-bold text-gray-700 whitespace-nowrap">
+                              <td className="px-3 py-3 text-sm font-bold text-foreground whitespace-nowrap sm:px-6">
                                 {Number.isFinite(it?.main?.humidity) ? `${it.main.humidity}%` : '—'}
                               </td>
-                              <td className="px-6 py-3 text-sm font-bold text-gray-700 whitespace-nowrap">
+                              <td className="px-3 py-3 text-sm font-bold text-foreground whitespace-nowrap sm:px-6">
                                 {windKmh != null ? `${windKmh} km/h` : '—'}{windC ? ` ${windC}` : ''}
                               </td>
-                              <td className="px-6 py-3 text-sm font-bold text-gray-700 whitespace-nowrap">
+                              <td className="px-3 py-3 text-sm font-bold text-foreground whitespace-nowrap sm:px-6">
                                 {Number.isFinite(rain) ? `${rain} mm` : '—'}
                               </td>
-                              <td className="px-6 py-3 text-sm font-bold text-gray-700 whitespace-nowrap">
+                              <td className="px-3 py-3 text-sm font-bold text-foreground whitespace-nowrap sm:px-6">
                                 {Number.isFinite(pop) ? `${Math.round(pop * 100)}%` : '—'}
                               </td>
                             </tr>
@@ -330,8 +330,8 @@ export default function WeatherDetailsPanel({ weather, riskReport }) {
           </div>
         )}
 
-        <details className="bg-gray-50 border border-gray-100 rounded-2xl p-4">
-          <summary className="cursor-pointer text-xs font-black text-gray-700 uppercase tracking-widest">
+        <details className="bg-muted border border-border rounded-2xl p-4">
+          <summary className="cursor-pointer text-xs font-black text-foreground uppercase tracking-widest">
             Data received (debug)
           </summary>
           <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">

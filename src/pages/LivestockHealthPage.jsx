@@ -22,13 +22,14 @@ import {
   ChevronRight,
   X,
   Upload,
-  Loader2,
   Camera
 } from 'lucide-react';
 import api from '../lib/axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import ModalShell from '../components/ui/ModalShell';
+import { LoadingState, EmptyState } from '../components/ui/States';
 
 const RECORD_TYPES = [
   { id: 'all', label: 'All Records', icon: FileText },
@@ -46,9 +47,9 @@ const StatusBadge = ({ status }) => {
     active: { label: 'Active', color: 'bg-red-100 text-red-700' },
     resolved: { label: 'Resolved', color: 'bg-green-100 text-green-700' },
     under_treatment: { label: 'Under Treatment', color: 'bg-blue-100 text-blue-700' },
-    discontinued: { label: 'Discontinued', color: 'bg-gray-100 text-gray-700' }
+    discontinued: { label: 'Discontinued', color: 'bg-muted text-foreground' }
   };
-  const config = configs[status] || { label: status, color: 'bg-gray-100 text-gray-700' };
+  const config = configs[status] || { label: status, color: 'bg-muted text-foreground' };
   
   return (
     <span className={`px-2 py-1 rounded-full text-xs font-bold ${config.color}`}>
@@ -60,12 +61,12 @@ const StatusBadge = ({ status }) => {
 const HealthRecordCard = ({ record, type, onClick }) => {
   const getIcon = () => {
     switch (type) {
-      case 'vaccination': return <Syringe className="h-5 w-5 text-blue-500" />;
-      case 'treatment': return <Pill className="h-5 w-5 text-amber-500" />;
-      case 'illness': return <Bug className="h-5 w-5 text-red-500" />;
-      case 'checkup': return <Stethoscope className="h-5 w-5 text-green-500" />;
-      case 'deworming': return <Activity className="h-5 w-5 text-purple-500" />;
-      default: return <FileText className="h-5 w-5 text-gray-500" />;
+      case 'vaccination': return <Syringe className="h-5 w-5 text-blue-500" aria-hidden="true" />;
+      case 'treatment': return <Pill className="h-5 w-5 text-amber-500" aria-hidden="true" />;
+      case 'illness': return <Bug className="h-5 w-5 text-red-500" aria-hidden="true" />;
+      case 'checkup': return <Stethoscope className="h-5 w-5 text-green-500" aria-hidden="true" />;
+      case 'deworming': return <Activity className="h-5 w-5 text-purple-500" aria-hidden="true" />;
+      default: return <FileText className="h-5 w-5 text-muted-foreground" aria-hidden="true" />;
     }
   };
 
@@ -95,7 +96,7 @@ const HealthRecordCard = ({ record, type, onClick }) => {
 
   return (
     <div 
-      className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-all cursor-pointer group"
+      className="bg-card rounded-2xl border border-border p-4 hover:shadow-md transition-all cursor-pointer group"
       onClick={onClick}
     >
       <div className="flex items-start gap-4">
@@ -109,13 +110,13 @@ const HealthRecordCard = ({ record, type, onClick }) => {
             />
           </div>
         ) : (
-          <div className="bg-gray-50 p-3 rounded-xl">
+          <div className="bg-muted p-3 rounded-xl">
             {getIcon()}
           </div>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h4 className="font-bold text-gray-900 truncate group-hover:text-primary transition-colors">
+            <h4 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
               {getTitle()}
             </h4>
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -132,9 +133,9 @@ const HealthRecordCard = ({ record, type, onClick }) => {
               {record.status && <StatusBadge status={record.status} />}
             </div>
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
+              <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
               {new Date(getDate()).toLocaleDateString()}
             </span>
             {record.cost && (
@@ -142,35 +143,35 @@ const HealthRecordCard = ({ record, type, onClick }) => {
             )}
             {type === 'illness' && record.affectedCount && (
               <span className="flex items-center gap-1 text-red-600">
-                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
                 {record.affectedCount} affected
               </span>
             )}
             {hasImages && (
               <span className="flex items-center gap-1">
-                <Camera className="h-3.5 w-3.5" />
+                <Camera className="h-3.5 w-3.5" aria-hidden="true" />
                 {record.imageUrls.length} photo{record.imageUrls.length > 1 ? 's' : ''}
               </span>
             )}
           </div>
           {/* Show description for illness records */}
           {type === 'illness' && record.description && (
-            <p className="text-sm text-gray-600 mt-2 line-clamp-2">{record.description}</p>
+            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{record.description}</p>
           )}
           {record.notes && !record.description && (
-            <p className="text-sm text-gray-500 mt-2 line-clamp-2">{record.notes}</p>
+            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{record.notes}</p>
           )}
         </div>
         <button
           type="button"
-          className="p-2 -m-2 rounded-full hover:bg-gray-50"
+          className="p-2 -m-2 rounded-full hover:bg-muted"
           aria-label="View record"
           onClick={(e) => {
             e.stopPropagation();
             onClick?.();
           }}
         >
-          <ChevronRight className="h-5 w-5 text-gray-300 group-hover:text-primary transition-colors flex-shrink-0" />
+          <ChevronRight className="h-5 w-5 text-muted-foreground/60 group-hover:text-primary transition-colors flex-shrink-0" aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -255,65 +256,58 @@ const ViewHealthRecordModal = ({ isOpen, onClose, record, type }) => {
   const fields = [...typeFields, ...baseFields];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <button type="button" className="absolute inset-0" aria-label="Close" onClick={onClose} />
-      <div className="relative bg-white rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex flex-wrap items-center justify-between gap-4 rounded-t-3xl">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">{title || 'Health Record'}</h2>
-            <p className="text-sm text-gray-500 mt-1 capitalize">{type}</p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="h-5 w-5 text-gray-400" />
-          </button>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title={title || 'Health Record'}
+      description={<span className="capitalize">{type}</span>}
+      size="md"
+      bodyClassName="space-y-4"
+      footer={
+        <div className="flex w-full justify-end">
+          <Button type="button" variant="outline" className="rounded-xl" onClick={onClose}>
+            Close
+          </Button>
         </div>
+      }
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {fields.map((f) => (
+          <div key={f.label} className="bg-muted border border-border rounded-2xl p-4">
+            <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">{f.label}</p>
+            <p className="text-sm text-foreground font-semibold mt-1 break-words">{f.value || '—'}</p>
+          </div>
+        ))}
+      </div>
 
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {fields.map((f) => (
-              <div key={f.label} className="bg-gray-50 border border-gray-100 rounded-2xl p-4">
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{f.label}</p>
-                <p className="text-sm text-gray-900 font-semibold mt-1 break-words">{f.value || '—'}</p>
-              </div>
+      {(record.description || record.notes) && (
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Notes</p>
+          <p className="text-sm text-foreground mt-2 whitespace-pre-wrap">
+            {record.description || record.notes}
+          </p>
+        </div>
+      )}
+
+      {Array.isArray(record.imageUrls) && record.imageUrls.length > 0 && (
+        <div className="bg-card border border-border rounded-2xl p-4">
+          <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-3">Photos</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {record.imageUrls.map((url, idx) => (
+              <a
+                key={idx}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="block rounded-xl overflow-hidden border border-border"
+              >
+                <img src={url} alt={`record-${idx}`} className="w-full max-w-full h-24 object-cover" />
+              </a>
             ))}
           </div>
-
-          {(record.description || record.notes) && (
-            <div className="bg-white border border-gray-100 rounded-2xl p-4">
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Notes</p>
-              <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
-                {record.description || record.notes}
-              </p>
-            </div>
-          )}
-
-          {Array.isArray(record.imageUrls) && record.imageUrls.length > 0 && (
-            <div className="bg-white border border-gray-100 rounded-2xl p-4">
-              <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-3">Photos</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {record.imageUrls.map((url, idx) => (
-                  <a
-                    key={idx}
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block rounded-xl overflow-hidden border border-gray-100"
-                  >
-                    <img src={url} alt={`record-${idx}`} className="w-full h-24 object-cover" />
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="flex justify-end">
-            <Button type="button" variant="outline" className="rounded-xl" onClick={onClose}>
-              Close
-            </Button>
-          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </ModalShell>
   );
 };
 
@@ -344,106 +338,115 @@ const AddVaccinationModal = ({ isOpen, onClose, livestockId, onSuccess, disabled
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex flex-wrap items-center justify-between gap-4 rounded-t-3xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-100 p-2 rounded-xl">
-              <Syringe className="h-5 w-5 text-blue-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900">Add Vaccination</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="h-5 w-5 text-gray-400" />
-          </button>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Add Vaccination"
+      icon={
+        <span className="bg-blue-100 p-2 rounded-xl">
+          <Syringe className="h-5 w-5 text-blue-600" aria-hidden="true" />
+        </span>
+      }
+      size="md"
+      bodyClassName="space-y-4"
+      footer={
+        <div className="flex w-full gap-3">
+          <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="add-vaccination-form"
+            className="flex-1"
+            loading={isSubmitting}
+            disabled={disabled}
+          >
+            <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+            Add Vaccination
+          </Button>
         </div>
-        
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Vaccine Name *</label>
-              <Input
-                required
-                value={formData.vaccineName}
-                onChange={(e) => setFormData({ ...formData, vaccineName: e.target.value })}
-                placeholder="e.g., Foot and Mouth Disease"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-bold text-gray-700">Vaccine Type</label>
-              <Input
-                value={formData.vaccineType}
-                onChange={(e) => setFormData({ ...formData, vaccineType: e.target.value })}
-                placeholder="e.g., Live attenuated"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-bold text-gray-700">Dosage *</label>
-              <Input
-                required
-                value={formData.dosage}
-                onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
-                placeholder="e.g., 2ml IM"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-bold text-gray-700">Date Administered *</label>
-              <Input
-                type="date"
-                required
-                value={formData.dateAdministered}
-                onChange={(e) => setFormData({ ...formData, dateAdministered: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-bold text-gray-700">Next Due Date</label>
-              <Input
-                type="date"
-                value={formData.nextDueDate}
-                onChange={(e) => setFormData({ ...formData, nextDueDate: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-bold text-gray-700">Cost (₦)</label>
-              <Input
-                type="number"
-                value={formData.cost}
-                onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                placeholder="0"
-                className="mt-1"
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Notes</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Any additional notes..."
-                className="mt-1 w-full min-h-[80px] bg-white border border-gray-200 rounded-lg p-3 text-sm"
-              />
-            </div>
+      }
+    >
+      <form id="add-vaccination-form" onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="vaccination-name">Vaccine Name *</label>
+            <Input
+              id="vaccination-name"
+              required
+              value={formData.vaccineName}
+              onChange={(e) => setFormData({ ...formData, vaccineName: e.target.value })}
+              placeholder="e.g., Foot and Mouth Disease"
+              className="mt-1"
+            />
           </div>
-          
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1" disabled={disabled || isSubmitting}>
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-              Add Vaccination
-            </Button>
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="vaccination-type">Vaccine Type</label>
+            <Input
+              id="vaccination-type"
+              value={formData.vaccineType}
+              onChange={(e) => setFormData({ ...formData, vaccineType: e.target.value })}
+              placeholder="e.g., Live attenuated"
+              className="mt-1"
+            />
           </div>
-        </form>
-      </div>
-    </div>
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="vaccination-dosage">Dosage *</label>
+            <Input
+              id="vaccination-dosage"
+              required
+              value={formData.dosage}
+              onChange={(e) => setFormData({ ...formData, dosage: e.target.value })}
+              placeholder="e.g., 2ml IM"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="vaccination-date">Date Administered *</label>
+            <Input
+              id="vaccination-date"
+              type="date"
+              required
+              value={formData.dateAdministered}
+              onChange={(e) => setFormData({ ...formData, dateAdministered: e.target.value })}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="vaccination-next-due">Next Due Date</label>
+            <Input
+              id="vaccination-next-due"
+              type="date"
+              value={formData.nextDueDate}
+              onChange={(e) => setFormData({ ...formData, nextDueDate: e.target.value })}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="vaccination-cost">Cost (₦)</label>
+            <Input
+              id="vaccination-cost"
+              type="number"
+              value={formData.cost}
+              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+              placeholder="0"
+              className="mt-1"
+            />
+          </div>
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="vaccination-notes">Notes</label>
+            <textarea
+              id="vaccination-notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Any additional notes..."
+              className="mt-1 w-full min-h-[80px] bg-card border border-border rounded-lg p-3 text-base sm:text-sm"
+            />
+          </div>
+        </div>
+      </form>
+    </ModalShell>
   );
 };
 
@@ -517,132 +520,138 @@ const AddDewormingModal = ({ isOpen, onClose, livestockId, onSuccess, disabled }
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex flex-wrap items-center justify-between gap-4 rounded-t-3xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-purple-100 p-2 rounded-xl">
-              <Activity className="h-5 w-5 text-purple-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900">Log Deworming</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="h-5 w-5 text-gray-400" />
-          </button>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Log Deworming"
+      icon={
+        <span className="bg-purple-100 p-2 rounded-xl">
+          <Activity className="h-5 w-5 text-purple-600" aria-hidden="true" />
+        </span>
+      }
+      size="md"
+      bodyClassName="space-y-4"
+      footer={
+        <div className="flex w-full gap-3">
+          <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="add-deworming-form"
+            className="flex-1"
+            loading={isSubmitting}
+            disabled={disabled}
+          >
+            <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+            Log Deworming
+          </Button>
         </div>
+      }
+    >
+      <form id="add-deworming-form" onSubmit={handleSubmit} className="space-y-4">
+        {formError && (
+          <div role="alert" className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm text-destructive font-medium">
+            {formError}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {formError && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700 font-medium">
-              {formError}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Product Name *</label>
-              <Input
-                required
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                placeholder="e.g., Albendazole"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-gray-700">Active Ingredient</label>
-              <Input
-                value={activeIngredient}
-                onChange={(e) => setActiveIngredient(e.target.value)}
-                placeholder="Optional"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-gray-700">Dosage *</label>
-              <Input
-                required
-                value={dosage}
-                onChange={(e) => setDosage(e.target.value)}
-                placeholder="e.g., 10ml oral"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-gray-700">Date Administered *</label>
-              <Input
-                type="date"
-                required
-                value={dateAdministered}
-                onChange={(e) => setDateAdministered(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-gray-700">Next Due Date</label>
-              <Input
-                type="date"
-                value={nextDueDate}
-                onChange={(e) => setNextDueDate(e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Target Parasites</label>
-              <Input
-                value={targetParasitesRaw}
-                onChange={(e) => setTargetParasitesRaw(e.target.value)}
-                placeholder="Comma-separated (e.g., roundworms, tapeworms)"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-gray-700">Cost (₦)</label>
-              <Input
-                type="number"
-                value={cost}
-                onChange={(e) => setCost(e.target.value)}
-                placeholder="0"
-                className="mt-1"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Notes</label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Any additional notes..."
-                className="mt-1 w-full min-h-[80px] bg-white border border-gray-200 rounded-lg p-3 text-sm"
-              />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="deworming-product">Product Name *</label>
+            <Input
+              id="deworming-product"
+              required
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder="e.g., Albendazole"
+              className="mt-1"
+            />
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1" disabled={disabled || isSubmitting}>
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Plus className="h-4 w-4 mr-2" />
-              )}
-              Log Deworming
-            </Button>
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="deworming-ingredient">Active Ingredient</label>
+            <Input
+              id="deworming-ingredient"
+              value={activeIngredient}
+              onChange={(e) => setActiveIngredient(e.target.value)}
+              placeholder="Optional"
+              className="mt-1"
+            />
           </div>
-        </form>
-      </div>
-    </div>
+
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="deworming-dosage">Dosage *</label>
+            <Input
+              id="deworming-dosage"
+              required
+              value={dosage}
+              onChange={(e) => setDosage(e.target.value)}
+              placeholder="e.g., 10ml oral"
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="deworming-date">Date Administered *</label>
+            <Input
+              id="deworming-date"
+              type="date"
+              required
+              value={dateAdministered}
+              onChange={(e) => setDateAdministered(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="deworming-next-due">Next Due Date</label>
+            <Input
+              id="deworming-next-due"
+              type="date"
+              value={nextDueDate}
+              onChange={(e) => setNextDueDate(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="deworming-parasites">Target Parasites</label>
+            <Input
+              id="deworming-parasites"
+              value={targetParasitesRaw}
+              onChange={(e) => setTargetParasitesRaw(e.target.value)}
+              placeholder="Comma-separated (e.g., roundworms, tapeworms)"
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="deworming-cost">Cost (₦)</label>
+            <Input
+              id="deworming-cost"
+              type="number"
+              value={cost}
+              onChange={(e) => setCost(e.target.value)}
+              placeholder="0"
+              className="mt-1"
+            />
+          </div>
+
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="deworming-notes">Notes</label>
+            <textarea
+              id="deworming-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Any additional notes..."
+              className="mt-1 w-full min-h-[80px] bg-card border border-border rounded-lg p-3 text-base sm:text-sm"
+            />
+          </div>
+        </div>
+      </form>
+    </ModalShell>
   );
 };
 
@@ -741,178 +750,199 @@ const AddIllnessModal = ({ isOpen, onClose, livestockId, livestock, onSuccess, d
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex flex-wrap items-center justify-between gap-4 rounded-t-3xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-red-100 p-2 rounded-xl">
-              <Bug className="h-5 w-5 text-red-600" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900">Report Illness</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
-            <X className="h-5 w-5 text-gray-400" />
-          </button>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Report Illness"
+      icon={
+        <span className="bg-red-100 p-2 rounded-xl">
+          <Bug className="h-5 w-5 text-red-600" aria-hidden="true" />
+        </span>
+      }
+      size="md"
+      bodyClassName="space-y-4"
+      footer={
+        <div className="flex w-full gap-3">
+          <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="add-illness-form"
+            variant="destructive"
+            className="flex-1"
+            loading={isSubmitting}
+            disabled={disabled}
+          >
+            <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+            Report Illness
+          </Button>
         </div>
+      }
+    >
+      <form id="add-illness-form" onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div role="alert" className="bg-destructive/10 border border-destructive/20 text-destructive p-3 rounded-xl text-sm flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+            {error}
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              {error}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="illness-condition">Condition/Disease Name *</label>
+            <Input
+              id="illness-condition"
+              required
+              value={formData.condition}
+              onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
+              placeholder="e.g., Avian Influenza, Mastitis"
+              className="mt-1"
+            />
+          </div>
+
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="illness-description">Description *</label>
+            <textarea
+              id="illness-description"
+              required
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Describe the illness in detail - visible symptoms, behavior changes, when it started..."
+              className="mt-1 w-full min-h-[100px] bg-card border border-border rounded-lg p-3 text-base sm:text-sm"
+            />
+          </div>
+
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="illness-symptoms">Symptoms (comma separated)</label>
+            <Input
+              id="illness-symptoms"
+              value={formData.symptoms}
+              onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
+              placeholder="e.g., loss of appetite, lethargy, discharge"
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="illness-severity">Severity *</label>
+            <select
+              id="illness-severity"
+              required
+              value={formData.severity}
+              onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
+              className="mt-1 w-full h-10 bg-card border border-border rounded-lg px-3 text-base sm:text-sm"
+            >
+              <option value="mild">Mild</option>
+              <option value="moderate">Moderate</option>
+              <option value="severe">Severe</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm font-bold text-foreground" htmlFor="illness-date">Date Identified *</label>
+            <Input
+              id="illness-date"
+              type="date"
+              required
+              value={formData.dateIdentified}
+              onChange={(e) => setFormData({ ...formData, dateIdentified: e.target.value })}
+              className="mt-1"
+            />
+          </div>
+
+          {isBatch && (
+            <div className="col-span-full">
+              <label className="text-sm font-bold text-foreground" htmlFor="illness-affected">
+                How many animals affected? (out of {batchQuantity})
+              </label>
+              <Input
+                id="illness-affected"
+                type="number"
+                min="1"
+                max={batchQuantity}
+                value={formData.affectedCount}
+                onChange={(e) => setFormData({ ...formData, affectedCount: e.target.value })}
+                placeholder={`1 - ${batchQuantity}`}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Specify how many animals in this batch are showing symptoms
+              </p>
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Condition/Disease Name *</label>
-              <Input
-                required
-                value={formData.condition}
-                onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
-                placeholder="e.g., Avian Influenza, Mastitis"
-                className="mt-1"
+          {/* Image Upload */}
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="illness-images">Photos (optional)</label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Upload photos of affected areas, symptoms, or overall condition for better tracking
+            </p>
+            <div
+              role="button"
+              tabIndex={0}
+              aria-label="Upload illness photos"
+              onClick={() => document.getElementById('illness-images').click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  document.getElementById('illness-images').click();
+                }
+              }}
+              className="border-2 border-dashed border-border rounded-xl p-4 text-center cursor-pointer hover:border-primary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" aria-hidden="true" />
+              <p className="text-sm text-muted-foreground">Click to upload photos</p>
+              <p className="text-xs text-muted-foreground">Up to 5 images • JPG, PNG</p>
+              <input
+                id="illness-images"
+                type="file"
+                multiple
+                accept="image/*"
+                aria-label="Choose illness photos"
+                className="hidden"
+                onChange={handleImageChange}
               />
             </div>
 
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Description *</label>
-              <textarea
-                required
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the illness in detail - visible symptoms, behavior changes, when it started..."
-                className="mt-1 w-full min-h-[100px] bg-white border border-gray-200 rounded-lg p-3 text-sm"
-              />
-            </div>
-
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Symptoms (comma separated)</label>
-              <Input
-                value={formData.symptoms}
-                onChange={(e) => setFormData({ ...formData, symptoms: e.target.value })}
-                placeholder="e.g., loss of appetite, lethargy, discharge"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-gray-700">Severity *</label>
-              <select
-                required
-                value={formData.severity}
-                onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
-                className="mt-1 w-full h-10 bg-white border border-gray-200 rounded-lg px-3 text-sm"
-              >
-                <option value="mild">Mild</option>
-                <option value="moderate">Moderate</option>
-                <option value="severe">Severe</option>
-                <option value="critical">Critical</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-sm font-bold text-gray-700">Date Identified *</label>
-              <Input
-                type="date"
-                required
-                value={formData.dateIdentified}
-                onChange={(e) => setFormData({ ...formData, dateIdentified: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-
-            {isBatch && (
-              <div className="col-span-2">
-                <label className="text-sm font-bold text-gray-700">
-                  How many animals affected? (out of {batchQuantity})
-                </label>
-                <Input
-                  type="number"
-                  min="1"
-                  max={batchQuantity}
-                  value={formData.affectedCount}
-                  onChange={(e) => setFormData({ ...formData, affectedCount: e.target.value })}
-                  placeholder={`1 - ${batchQuantity}`}
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Specify how many animals in this batch are showing symptoms
-                </p>
+            {images.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">
+                {images.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={img.preview}
+                      alt={`Preview ${idx + 1}`}
+                      className="w-full max-w-full aspect-square object-cover rounded-lg"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      aria-label={`Remove photo ${idx + 1}`}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 rounded-full opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+                    >
+                      <X className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-
-            {/* Image Upload */}
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Photos (optional)</label>
-              <p className="text-xs text-gray-500 mb-2">
-                Upload photos of affected areas, symptoms, or overall condition for better tracking
-              </p>
-              <div
-                onClick={() => document.getElementById('illness-images').click()}
-                className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
-              >
-                <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">Click to upload photos</p>
-                <p className="text-xs text-gray-400">Up to 5 images • JPG, PNG</p>
-                <input
-                  id="illness-images"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleImageChange}
-                />
-              </div>
-
-              {images.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-3">
-                  {images.map((img, idx) => (
-                    <div key={idx} className="relative group">
-                      <img
-                        src={img.preview}
-                        alt={`Preview ${idx + 1}`}
-                        className="w-full aspect-square object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="absolute -top-1 -right-1 bg-red-500 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="col-span-2">
-              <label className="text-sm font-bold text-gray-700">Notes</label>
-              <textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Any additional observations..."
-                className="mt-1 w-full min-h-[60px] bg-white border border-gray-200 rounded-lg p-3 text-sm"
-              />
-            </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1 bg-red-500 hover:bg-red-600" disabled={disabled || isSubmitting}>
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
-              Report Illness
-            </Button>
+          <div className="col-span-full">
+            <label className="text-sm font-bold text-foreground" htmlFor="illness-notes">Notes</label>
+            <textarea
+              id="illness-notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Any additional observations..."
+              className="mt-1 w-full min-h-[60px] bg-card border border-border rounded-lg p-3 text-base sm:text-sm"
+            />
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </ModalShell>
   );
 };
 
@@ -1024,7 +1054,7 @@ const LivestockHealthPage = () => {
   }, [isActionLocked]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       {/* Modals */}
       <AddVaccinationModal
         isOpen={showVaccinationModal}
@@ -1071,33 +1101,38 @@ const LivestockHealthPage = () => {
       <button
         type="button"
         onClick={goBack}
-        className="inline-flex items-center text-gray-500 hover:text-gray-900 transition-colors"
+        className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
       >
-        <ArrowLeft className="mr-2 h-4 w-4" />
+        <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
         Back
       </button>
 
       {/* Header */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-              <Heart className="h-8 w-8 text-red-500" />
+      <div className="bg-card rounded-3xl border border-border shadow-sm p-4 sm:p-8">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 sm:gap-6">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-black text-foreground flex items-center gap-3">
+              <Heart className="h-8 w-8 shrink-0 text-red-500" aria-hidden="true" />
               Health Records
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-1">
               {livestock?.name || livestock?.tagId || 'Livestock'} • {livestock?.species}
             </p>
           </div>
-          
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => refetch()} className="rounded-xl">
-              <RefreshCw className="h-4 w-4" />
+
+          <div className="flex flex-wrap gap-2 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={() => refetch()}
+              className="rounded-xl"
+              aria-label="Refresh health records"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden="true" />
             </Button>
 
             <Link to={vetAiHref} className="inline-flex">
               <Button variant="outline" className="rounded-xl">
-                <Stethoscope className="h-4 w-4 mr-2" />
+                <Stethoscope className="h-4 w-4 mr-2" aria-hidden="true" />
                 Vet AI
               </Button>
             </Link>
@@ -1111,8 +1146,10 @@ const LivestockHealthPage = () => {
                 className="rounded-xl"
                 disabled={isActionLocked}
                 title={isActionLocked ? 'This livestock is no longer active.' : undefined}
+                aria-haspopup="true"
+                aria-expanded={showAddMenu}
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                 Add Record
               </Button>
               {showAddMenu && !isActionLocked && (
@@ -1121,53 +1158,63 @@ const LivestockHealthPage = () => {
                     className="fixed inset-0 z-40" 
                     onClick={() => setShowAddMenu(false)} 
                   />
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-card rounded-xl shadow-lg border border-border py-2 z-50" role="menu" aria-label="Record types">
                     <button
+                      type="button"
+                      role="menuitem"
                       onClick={() => {
                         setShowVaccinationModal(true);
                         setShowAddMenu(false);
                       }}
-                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3"
+                      className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center gap-3"
                     >
-                      <Syringe className="h-4 w-4 text-blue-500" />
+                      <Syringe className="h-4 w-4 text-blue-500" aria-hidden="true" />
                       <span className="font-medium">Vaccination</span>
                     </button>
                     <button
+                      type="button"
+                      role="menuitem"
                       onClick={() => setShowAddMenu(false)}
-                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3 opacity-50 cursor-not-allowed"
+                      className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center gap-3 opacity-50 cursor-not-allowed"
                       disabled
                     >
-                      <Bug className="h-4 w-4 text-red-500" />
+                      <Bug className="h-4 w-4 text-red-500" aria-hidden="true" />
                       <span className="font-medium">Illness</span>
-                      <span className="text-xs text-gray-400 ml-auto">Soon</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Soon</span>
                     </button>
                     <button
+                      type="button"
+                      role="menuitem"
                       onClick={() => {
                         setShowDewormingModal(true);
                         setShowAddMenu(false);
                       }}
-                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3"
+                      className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center gap-3"
                     >
-                      <Activity className="h-4 w-4 text-purple-500" />
+                      <Activity className="h-4 w-4 text-purple-500" aria-hidden="true" />
                       <span className="font-medium">Deworming</span>
                     </button>
                     <button
+                      type="button"
+                      role="menuitem"
                       onClick={() => setShowAddMenu(false)}
-                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3 opacity-50 cursor-not-allowed"
+                      className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center gap-3 opacity-50 cursor-not-allowed"
                       disabled
                     >
-                      <Pill className="h-4 w-4 text-amber-500" />
+                      <Pill className="h-4 w-4 text-amber-500" aria-hidden="true" />
                       <span className="font-medium">Treatment</span>
-                      <span className="text-xs text-gray-400 ml-auto">Soon</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Soon</span>
                     </button>
                     <button
+                      type="button"
+                      role="menuitem"
                       onClick={() => setShowAddMenu(false)}
-                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3 opacity-50 cursor-not-allowed"
+                      className="w-full px-4 py-2.5 text-left hover:bg-muted flex items-center gap-3 opacity-50 cursor-not-allowed"
                       disabled
                     >
-                      <Stethoscope className="h-4 w-4 text-green-500" />
+                      <Stethoscope className="h-4 w-4 text-green-500" aria-hidden="true" />
                       <span className="font-medium">Checkup</span>
-                      <span className="text-xs text-gray-400 ml-auto">Soon</span>
+                      <span className="text-xs text-muted-foreground ml-auto">Soon</span>
                     </button>
                   </div>
                 </>
@@ -1178,22 +1225,31 @@ const LivestockHealthPage = () => {
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {RECORD_TYPES.filter(t => t.id !== 'all').map(type => {
           const Icon = type.icon;
           return (
             <Card 
               key={type.id} 
-              className={`border-none shadow-sm cursor-pointer transition-all hover:shadow-md ${activeType === type.id ? 'ring-2 ring-primary' : ''}`}
+              className={`border-none shadow-sm cursor-pointer transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${activeType === type.id ? 'ring-2 ring-primary' : ''}`}
+              role="button"
+              tabIndex={0}
+              aria-pressed={activeType === type.id}
               onClick={() => setActiveType(type.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setActiveType(type.id);
+                }
+              }}
             >
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="bg-gray-50 p-2 rounded-lg">
-                  <Icon className={`h-5 w-5 ${type.color}`} />
+                <div className="bg-muted p-2 rounded-lg">
+                  <Icon className={`h-5 w-5 ${type.color}`} aria-hidden="true" />
                 </div>
-                <div>
-                  <p className="text-2xl font-black text-gray-900">{typeCounts[type.id]}</p>
-                  <p className="text-xs text-gray-500">{type.label}</p>
+                <div className="min-w-0">
+                  <p className="text-2xl font-black text-foreground">{typeCounts[type.id]}</p>
+                  <p className="text-xs text-muted-foreground truncate">{type.label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -1208,17 +1264,19 @@ const LivestockHealthPage = () => {
           return (
             <button
               key={type.id}
+              type="button"
               onClick={() => setActiveType(type.id)}
+              aria-pressed={activeType === type.id}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                 activeType === type.id
                   ? 'bg-primary text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:border-primary'
+                  : 'bg-card text-muted-foreground border border-border hover:border-primary'
               }`}
             >
-              <Icon className={`h-4 w-4 ${activeType === type.id ? '' : type.color || ''}`} />
+              <Icon className={`h-4 w-4 ${activeType === type.id ? '' : type.color || ''}`} aria-hidden="true" />
               {type.label}
               <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                activeType === type.id ? 'bg-white/20' : 'bg-gray-100'
+                activeType === type.id ? 'bg-white/20' : 'bg-muted'
               }`}>
                 {typeCounts[type.id]}
               </span>
@@ -1229,8 +1287,9 @@ const LivestockHealthPage = () => {
 
       {/* Search */}
       <div className="relative w-full lg:w-96">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" aria-hidden="true" />
         <Input
+          aria-label="Search health records"
           placeholder="Search health records..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -1240,11 +1299,7 @@ const LivestockHealthPage = () => {
 
       {/* Records List */}
       {isLoading ? (
-        <div className="space-y-4">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-24 bg-white rounded-2xl animate-pulse" />
-          ))}
-        </div>
+        <LoadingState label="Loading health records..." />
       ) : filteredRecords.length > 0 ? (
         <div className="space-y-4">
           {filteredRecords.map((record, idx) => (
@@ -1257,26 +1312,25 @@ const LivestockHealthPage = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 bg-white rounded-3xl border border-gray-100">
-          <div className="bg-gray-100 h-20 w-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <FileText className="h-10 w-10 text-gray-400" />
-          </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No health records yet</h3>
-          <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-            Start tracking vaccinations, treatments, and checkups for this animal
-          </p>
-          <div className="flex gap-3 justify-center">
-            <Button onClick={() => setShowVaccinationModal(true)} className="rounded-xl" disabled={isActionLocked}>
-              <Syringe className="h-4 w-4 mr-2" />
-              Add Vaccination
-            </Button>
-            <Button variant="outline" className="rounded-xl" disabled>
-              <Bug className="h-4 w-4 mr-2" />
-              Illness
-              <span className="text-xs text-gray-400 ml-2">Soon</span>
-            </Button>
-          </div>
-        </div>
+        <EmptyState
+          className="bg-card rounded-3xl border border-border"
+          icon={<FileText className="h-10 w-10" aria-hidden="true" />}
+          title="No health records yet"
+          description="Start tracking vaccinations, treatments, and checkups for this animal"
+          action={
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Button onClick={() => setShowVaccinationModal(true)} className="rounded-xl" disabled={isActionLocked}>
+                <Syringe className="h-4 w-4 mr-2" aria-hidden="true" />
+                Add Vaccination
+              </Button>
+              <Button variant="outline" className="rounded-xl" disabled>
+                <Bug className="h-4 w-4 mr-2" aria-hidden="true" />
+                Illness
+                <span className="text-xs text-muted-foreground ml-2">Soon</span>
+              </Button>
+            </div>
+          }
+        />
       )}
     </div>
   );

@@ -1,10 +1,11 @@
 import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { X, Loader2, Info, Check } from 'lucide-react';
+import { Info, Check } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import api from '../lib/axios';
+import ModalShell from './ui/ModalShell';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
@@ -153,65 +154,69 @@ export default function EditFarmModal({ isOpen, onClose, farm }) {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-3xl w-full max-w-2xl my-auto shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center z-10 rounded-t-3xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-xl">
-              <Check className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">Edit Farm Profile</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="h-6 w-6 text-gray-400" />
-          </button>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Edit Farm Profile"
+      size="lg"
+      icon={
+        <div className="bg-primary/10 p-2 rounded-xl">
+          <Check className="h-6 w-6 text-primary" aria-hidden="true" />
         </div>
-
-        <div className="overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-3">
-                <Info className="h-5 w-5 shrink-0" />
-                {error}
-              </div>
-            )}
+      }
+      footer={
+        <>
+          <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSubmit(onSubmit)} loading={isLoading} className="rounded-xl font-black h-11 px-6">
+            {isLoading ? 'Saving...' : 'Save changes'}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {error && (
+          <div role="alert" className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-medium border border-destructive/20 flex items-center gap-3">
+            <Info className="h-5 w-5 shrink-0" aria-hidden="true" />
+            {error}
+          </div>
+        )}
 
             <div className="space-y-6">
               <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Farm Name</label>
-                  <Input placeholder="e.g. Sunshine Acres" {...register('name')} className={errors.name ? 'border-red-500' : ''} />
-                  {errors.name && <p className="text-xs text-red-500 font-medium">{errors.name.message}</p>}
+                  <label className="text-sm font-bold text-foreground">Farm Name</label>
+                  <Input placeholder="e.g. Sunshine Acres" {...register('name')} className={errors.name ? 'border-destructive' : ''} />
+                  {errors.name && <p role="alert" className="text-xs text-destructive font-medium">{errors.name.message}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Established Date</label>
+                  <label className="text-sm font-bold text-foreground">Established Date</label>
                   <Input type="date" {...register('establishedDate')} />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Size</label>
+                  <label className="text-sm font-bold text-foreground">Size</label>
                   <div className="flex gap-2">
-                    <Input type="number" step="0.1" placeholder="50" {...register('size')} className={errors.size ? 'border-red-500' : ''} />
+                    <Input type="number" step="0.1" placeholder="50" {...register('size')} className={errors.size ? 'border-destructive' : ''} />
                     <select
-                      className="bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
+                      className="shrink-0 h-11 bg-muted border border-border rounded-lg px-3 text-base sm:text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
                       {...register('sizeUnit')}
                     >
                       <option value="acres">Acres</option>
                       <option value="hectares">Hectares</option>
                     </select>
                   </div>
-                  {errors.size && <p className="text-xs text-red-500 font-medium">{errors.size.message}</p>}
+                  {errors.size && <p role="alert" className="text-xs text-destructive font-medium">{errors.size.message}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Irrigation Type</label>
+                  <label className="text-sm font-bold text-foreground">Irrigation Type</label>
                   <select
-                    className="w-full h-10 bg-white border border-input rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                    className="w-full h-11 bg-background border border-input rounded-md px-3 py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary outline-none"
                     {...register('irrigationType')}
                   >
                     {['drip', 'sprinkler', 'flood', 'rainfed', 'none'].map((type) => (
@@ -225,88 +230,72 @@ export default function EditFarmModal({ isOpen, onClose, farm }) {
             </div>
 
             <div className="space-y-4">
-              <label className="text-sm font-bold text-gray-700">Soil Types (Select all that apply)</label>
+              <label className="text-sm font-bold text-foreground">Soil Types (Select all that apply)</label>
               <div className="flex flex-wrap gap-2">
                 {SOIL_TYPES.map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => toggleSoil(type)}
+                    aria-pressed={selectedSoils?.includes(type)}
                     className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
                       selectedSoils?.includes(type)
                         ? 'bg-primary text-white border-primary shadow-md'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-primary/50'
+                        : 'bg-card text-muted-foreground border-border hover:border-primary/50'
                     }`}
                   >
                     <div className="flex items-center gap-1.5">
-                      {selectedSoils?.includes(type) && <Check className="h-3 w-3" />}
+                      {selectedSoils?.includes(type) && <Check className="h-3 w-3" aria-hidden="true" />}
                       {type}
                     </div>
                   </button>
                 ))}
               </div>
-              {errors.soilType && <p className="text-xs text-red-500 font-medium">{errors.soilType.message}</p>}
+              {errors.soilType && <p role="alert" className="text-xs text-destructive font-medium">{errors.soilType.message}</p>}
             </div>
 
             <div className="space-y-6">
               <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Location</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-bold text-gray-700">Address</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-sm font-bold text-foreground">Address</label>
                   <Input placeholder="Farm address" {...register('location.address')} />
-                  {errors.location?.address && <p className="text-xs text-red-500 font-medium">{errors.location.address.message}</p>}
+                  {errors.location?.address && <p role="alert" className="text-xs text-destructive font-medium">{errors.location.address.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">City</label>
+                  <label className="text-sm font-bold text-foreground">City</label>
                   <Input placeholder="City" {...register('location.city')} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">State</label>
+                  <label className="text-sm font-bold text-foreground">State</label>
                   <Input placeholder="State" {...register('location.state')} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Country</label>
+                  <label className="text-sm font-bold text-foreground">Country</label>
                   <Input placeholder="Country" {...register('location.country')} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Latitude (optional)</label>
+                  <label className="text-sm font-bold text-foreground">Latitude (optional)</label>
                   <Input type="number" step="0.000001" placeholder="" {...register('location.coordinates.latitude')} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Longitude (optional)</label>
+                  <label className="text-sm font-bold text-foreground">Longitude (optional)</label>
                   <Input type="number" step="0.000001" placeholder="" {...register('location.coordinates.longitude')} />
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Description</label>
+              <label className="text-sm font-bold text-foreground">Description</label>
               <textarea
-                className="w-full min-h-[96px] border border-gray-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+                className="w-full min-h-[96px] bg-background border border-border rounded-xl p-3 text-base sm:text-sm focus:ring-2 focus:ring-primary outline-none"
                 placeholder="Short description"
                 {...register('description')}
               />
-              {errors.description && <p className="text-xs text-red-500 font-medium">{errors.description.message}</p>}
+              {errors.description && <p role="alert" className="text-xs text-destructive font-medium">{errors.description.message}</p>}
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <Button type="button" variant="outline" onClick={onClose} className="rounded-xl">
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading} className="rounded-xl font-black h-11 px-6">
-                {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving...
-                  </span>
-                ) : (
-                  'Save changes'
-                )}
-              </Button>
-            </div>
           </form>
-        </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }

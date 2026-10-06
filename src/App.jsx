@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MotionConfig } from 'framer-motion';
 import { CreditCard } from 'lucide-react';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -46,6 +47,7 @@ const PublicRoute = ({ children }) => {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <MotionConfig reducedMotion="user">
       <Router>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -220,6 +222,7 @@ function App() {
           />
         </Routes>
       </Router>
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

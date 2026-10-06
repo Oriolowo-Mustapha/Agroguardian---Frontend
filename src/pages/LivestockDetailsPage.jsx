@@ -29,14 +29,15 @@ import {
   FileText,
   History,
   MapPin,
-  X,
-  Loader2,
   Skull
 } from 'lucide-react';
 import api from '../lib/axios';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import ModalShell from '../components/ui/ModalShell';
+import { LoadingState, ErrorState, EmptyState } from '../components/ui/States';
+import { SectionCard, MiniStat } from '../components/ui/SectionCard';
+import { cn } from '../lib/utils';
 
 const speciesIcons = {
   cattle: Beef,
@@ -63,14 +64,14 @@ const HealthStatusBadge = ({ status }) => {
     recovering: { label: 'Recovering', color: 'bg-blue-100 text-blue-700', icon: Activity },
     under_treatment: { label: 'Under Treatment', color: 'bg-amber-100 text-amber-700', icon: Syringe },
     critical: { label: 'Critical', color: 'bg-red-100 text-red-700 animate-pulse', icon: AlertTriangle },
-    deceased: { label: 'Deceased', color: 'bg-gray-200 text-gray-700', icon: Skull }
+    deceased: { label: 'Deceased', color: 'bg-muted text-muted-foreground', icon: Skull }
   };
   const config = configs[status] || configs.healthy;
   const Icon = config.icon;
   
   return (
-    <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold ${config.color}`}>
-      <Icon className="h-4 w-4" />
+    <span className={`inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-sm font-bold ${config.color}`}>
+      <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
       {config.label}
     </span>
   );
@@ -78,31 +79,36 @@ const HealthStatusBadge = ({ status }) => {
 
 const InfoItem = ({ icon, label, value, className = '' }) => (
   <div className={`flex items-center gap-3 ${className}`}>
-    <div className="bg-gray-100 p-2 rounded-lg">
-      {icon ? React.createElement(icon, { className: 'h-4 w-4 text-gray-600' }) : null}
+    <div className="shrink-0 bg-muted p-2 rounded-lg" aria-hidden="true">
+      {icon ? React.createElement(icon, { className: 'h-4 w-4 text-muted-foreground' }) : null}
     </div>
-    <div>
-      <p className="text-xs text-gray-500 uppercase tracking-wider">{label}</p>
-      <p className="font-bold text-gray-900">{value || '-'}</p>
+    <div className="min-w-0">
+      <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
+      <p className="font-bold text-foreground break-words">{value || '-'}</p>
     </div>
   </div>
 );
 
 const TabButton = ({ active, onClick, icon, label, count }) => (
   <button
+    type="button"
     onClick={onClick}
-    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all ${
-      active 
-        ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-100'
-    }`}
+    aria-pressed={active}
+    className={cn(
+      'flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all sm:px-5 sm:py-3 sm:text-base',
+      active
+        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+        : 'border border-border bg-card text-muted-foreground hover:bg-muted'
+    )}
   >
-    {icon ? React.createElement(icon, { className: 'h-4 w-4' }) : null}
-    {label}
+    {icon ? React.createElement(icon, { className: 'h-4 w-4 shrink-0', 'aria-hidden': true }) : null}
+    <span className="truncate">{label}</span>
     {count > 0 && (
-      <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
-        active ? 'bg-white/20' : 'bg-primary/10 text-primary'
-      }`}>
+      <span
+        className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+          active ? 'bg-white/20' : 'bg-primary/10 text-primary'
+        }`}
+      >
         {count}
       </span>
     )}
@@ -136,9 +142,31 @@ const LivestockDetailsPage = () => {
     date: new Date().toISOString().split('T')[0]
   });
 
+  const healthAddMenuRef = React.useRef(null);
+
   React.useEffect(() => {
     setShowHealthAddMenu(false);
   }, [activeTab]);
+
+  React.useEffect(() => {
+    if (!showHealthAddMenu) return;
+
+    const handlePointerDown = (event) => {
+      if (healthAddMenuRef.current && !healthAddMenuRef.current.contains(event.target)) {
+        setShowHealthAddMenu(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setShowHealthAddMenu(false);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showHealthAddMenu]);
 
   const looksLikeLivestock = (obj) =>
     !!obj && typeof obj === 'object' && 'species' in obj;
@@ -281,26 +309,25 @@ const LivestockDetailsPage = () => {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-64 bg-white rounded-3xl" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="h-48 bg-white rounded-3xl lg:col-span-2" />
-          <div className="h-48 bg-white rounded-3xl" />
-        </div>
+      <div className="rounded-3xl border border-border bg-card">
+        <LoadingState label="Loading livestock details…" />
       </div>
     );
   }
 
   if (livestockError || !livestock) {
     return (
-      <div className="text-center py-24 bg-white rounded-3xl">
-        <AlertTriangle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Livestock not found</h3>
-        <p className="text-gray-500 mb-6">The animal you're looking for doesn't exist.</p>
-        <Button onClick={goBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
-        </Button>
+      <div className="rounded-3xl border border-border bg-card">
+        <ErrorState
+          title="Livestock not found"
+          message="The animal you're looking for doesn't exist."
+        />
+        <div className="flex justify-center pb-16 -mt-10">
+          <Button onClick={goBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+            Back
+          </Button>
+        </div>
       </div>
     );
   }
@@ -421,394 +448,405 @@ const LivestockDetailsPage = () => {
   const displayHealthStatus = isDeceased ? 'deceased' : livestock.healthStatus;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-500">
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
-            <div className="bg-red-100 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Trash2 className="h-8 w-8 text-red-500" />
-            </div>
-            <h3 className="text-2xl font-bold text-center text-gray-900 mb-2">Delete Livestock?</h3>
-            <p className="text-center text-gray-500 mb-8">
-              This will permanently delete {livestock.tagId || 'this livestock'} and all related records.
-            </p>
-            <div className="flex gap-4">
-              <Button 
-                variant="outline" 
-                className="flex-1 h-12 rounded-xl"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="destructive"
-                className="flex-1 h-12 rounded-xl bg-red-500 hover:bg-red-600"
-                onClick={() => deleteMutation.mutate()}
-                disabled={deleteMutation.isPending || isActionLocked}
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalShell
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Delete Livestock?"
+        size="sm"
+        icon={
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+            <Trash2 className="h-6 w-6 text-destructive" aria-hidden="true" />
+          </span>
+        }
+        footer={
+          <>
+            <Button
+              variant="outline"
+              className="flex-1 sm:flex-none"
+              onClick={() => setShowDeleteConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1 sm:flex-none"
+              loading={deleteMutation.isPending}
+              disabled={isActionLocked}
+              onClick={() => deleteMutation.mutate()}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-muted-foreground">
+          This will permanently delete{' '}
+          <span className="font-bold text-foreground">{livestock.tagId || 'this livestock'}</span> and
+          all related records.
+        </p>
+      </ModalShell>
 
       {/* Add Weight Modal */}
-      {showAddWeightModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="bg-primary/10 p-2 rounded-xl">
-                  <Scale className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">Add Weight</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddWeightModal(false);
-                  setWeightFormError(null);
-                }}
-                className="p-2 hover:bg-gray-100 rounded-full"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
+      <ModalShell
+        open={showAddWeightModal}
+        onClose={() => {
+          setShowAddWeightModal(false);
+          setWeightFormError(null);
+        }}
+        title="Add Weight"
+        size="sm"
+        icon={
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+            <Scale className="h-5 w-5 text-primary" aria-hidden="true" />
+          </span>
+        }
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 sm:flex-none"
+              onClick={() => {
+                setShowAddWeightModal(false);
                 setWeightFormError(null);
-
-                const weight = Number.parseFloat(weightForm.weight);
-                if (!Number.isFinite(weight) || weight <= 0) {
-                  setWeightFormError('Please enter a valid weight.');
-                  return;
-                }
-
-                if (isActionLocked) {
-                  setWeightFormError('This livestock is deceased. Actions are disabled.');
-                  return;
-                }
-
-                addWeightMutation.mutate({
-                  weight,
-                  unit: weightForm.unit,
-                  notes: weightForm.notes || undefined
-                });
               }}
-              className="space-y-4"
             >
-              <div>
-                <label className="text-sm font-bold text-gray-700">
-                  {livestock.trackingType === 'batch' ? 'Average weight (per animal)' : 'Weight'}
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={weightForm.weight}
-                  onChange={(e) => setWeightForm({ ...weightForm, weight: e.target.value })}
-                  placeholder="e.g., 2.5"
-                  className="mt-1 rounded-xl h-12"
-                />
-              </div>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="add-weight-form"
+              className="flex-1 sm:flex-none"
+              loading={addWeightMutation.isPending}
+            >
+              {addWeightMutation.isPending ? (
+                'Saving…'
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                  Save
+                </>
+              )}
+            </Button>
+          </>
+        }
+      >
+        <form
+          id="add-weight-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setWeightFormError(null);
 
-              <div>
-                <label className="text-sm font-bold text-gray-700">Unit</label>
-                <select
-                  value={weightForm.unit}
-                  onChange={(e) => setWeightForm({ ...weightForm, unit: e.target.value })}
-                  className="mt-1 w-full h-12 rounded-xl border border-gray-200 bg-white px-3 text-sm"
-                >
-                  <option value="kg">kg</option>
-                  <option value="lbs">lbs</option>
-                </select>
-              </div>
+            const weight = Number.parseFloat(weightForm.weight);
+            if (!Number.isFinite(weight) || weight <= 0) {
+              setWeightFormError('Please enter a valid weight.');
+              return;
+            }
 
-              <div>
-                <label className="text-sm font-bold text-gray-700">Notes</label>
-                <textarea
-                  value={weightForm.notes}
-                  onChange={(e) => setWeightForm({ ...weightForm, notes: e.target.value })}
-                  placeholder="Optional"
-                  className="mt-1 w-full min-h-[90px] rounded-xl border border-gray-200 p-3 text-sm"
-                />
-              </div>
+            if (isActionLocked) {
+              setWeightFormError('This livestock is deceased. Actions are disabled.');
+              return;
+            }
 
-              {weightFormError ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-                  <p className="text-sm font-bold text-red-700">{weightFormError}</p>
-                </div>
-              ) : null}
-
-              {addWeightMutation.isError ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-                  <p className="text-sm font-bold text-red-700">Failed to record weight</p>
-                  <p className="text-sm text-red-700/90">{getApiErrorMessage(addWeightMutation.error)}</p>
-                  <p className="text-xs text-red-700/80 mt-1">
-                    Endpoint: <span className="font-mono">POST /livestock/{livestockId}/weight</span>
-                  </p>
-                </div>
-              ) : null}
-
-              <div className="flex gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1 h-12 rounded-xl"
-                  onClick={() => {
-                    setShowAddWeightModal(false);
-                    setWeightFormError(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="flex-1 h-12 rounded-xl"
-                  disabled={addWeightMutation.isPending}
-                >
-                  {addWeightMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Saving…
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Save
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
+            addWeightMutation.mutate({
+              weight,
+              unit: weightForm.unit,
+              notes: weightForm.notes || undefined
+            });
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label htmlFor="weight-amount" className="text-sm font-bold text-foreground">
+              {livestock.trackingType === 'batch' ? 'Average weight (per animal)' : 'Weight'}
+            </label>
+            <Input
+              id="weight-amount"
+              type="number"
+              step="0.01"
+              required
+              value={weightForm.weight}
+              onChange={(e) => setWeightForm({ ...weightForm, weight: e.target.value })}
+              placeholder="e.g., 2.5"
+              className="mt-1 rounded-xl h-12"
+            />
           </div>
-        </div>
-      )}
 
-      {/* Log Death Modal */}
-      {showDeathModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="bg-red-500/10 p-2 rounded-xl">
-                  <Skull className="h-5 w-5 text-red-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  {livestock.trackingType === 'batch' ? 'Log Deaths' : 'Mark as Deceased'}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDeathModal(false);
-                  setDeathFormError(null);
-                }}
-                className="p-2 hover:bg-gray-100 rounded-full"
-              >
-                <X className="h-5 w-5 text-gray-500" />
-              </button>
+          <div>
+            <label htmlFor="weight-unit" className="text-sm font-bold text-foreground">Unit</label>
+            <select
+              id="weight-unit"
+              value={weightForm.unit}
+              onChange={(e) => setWeightForm({ ...weightForm, unit: e.target.value })}
+              className="mt-1 w-full h-12 rounded-xl border border-border bg-background px-3 text-base sm:text-sm text-foreground"
+            >
+              <option value="kg">kg</option>
+              <option value="lbs">lbs</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="weight-notes" className="text-sm font-bold text-foreground">Notes</label>
+            <textarea
+              id="weight-notes"
+              value={weightForm.notes}
+              onChange={(e) => setWeightForm({ ...weightForm, notes: e.target.value })}
+              placeholder="Optional"
+              className="mt-1 w-full min-h-[90px] rounded-xl border border-border bg-background p-3 text-base sm:text-sm text-foreground"
+            />
+          </div>
+
+          {weightFormError ? (
+            <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+              <p className="text-sm font-bold text-destructive">{weightFormError}</p>
             </div>
+          ) : null}
 
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 mb-4">
-              <p className="text-sm font-bold text-amber-800">This action updates inventory & profit</p>
-              <p className="text-xs text-amber-800/90">
-                It will reduce batch quantity (or mark the animal as deceased) and record a financial loss so other features stay consistent.
+          {addWeightMutation.isError ? (
+            <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+              <p className="text-sm font-bold text-destructive">Failed to record weight</p>
+              <p className="text-sm text-destructive/90">{getApiErrorMessage(addWeightMutation.error)}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Endpoint: <span className="font-mono">POST /livestock/{livestockId}/weight</span>
               </p>
             </div>
+          ) : null}
+        </form>
+      </ModalShell>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
+      {/* Log Death Modal */}
+      <ModalShell
+        open={showDeathModal}
+        onClose={() => {
+          setShowDeathModal(false);
+          setDeathFormError(null);
+        }}
+        title={livestock.trackingType === 'batch' ? 'Log Deaths' : 'Mark as Deceased'}
+        size="sm"
+        icon={
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/10">
+            <Skull className="h-5 w-5 text-destructive" aria-hidden="true" />
+          </span>
+        }
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1 sm:flex-none"
+              onClick={() => {
+                setShowDeathModal(false);
                 setDeathFormError(null);
-
-                const isBatch = livestock.trackingType === 'batch';
-                const maxQty = isBatch ? Number(livestock.quantity || 0) : 1;
-
-                const qty = isBatch ? Number.parseInt(String(deathForm.quantity || 1), 10) : 1;
-                if (!Number.isFinite(qty) || qty <= 0) {
-                  setDeathFormError('Please enter a valid quantity.');
-                  return;
-                }
-                if (isBatch && Number.isFinite(maxQty) && maxQty > 0 && qty > maxQty) {
-                  setDeathFormError(`Death quantity (${qty}) cannot exceed batch quantity (${maxQty}).`);
-                  return;
-                }
-
-                const unitPriceRaw = String(deathForm.unitPrice ?? '').trim();
-                const unitPrice = unitPriceRaw === '' ? undefined : Number(unitPriceRaw);
-                if (unitPriceRaw !== '' && (!Number.isFinite(unitPrice) || unitPrice < 0)) {
-                  setDeathFormError('Estimated value per animal must be a valid number.');
-                  return;
-                }
-
-                logDeathMutation.mutate({
-                  transactionType: 'death',
-                  livestockId,
-                  species: livestock.species,
-                  quantity: qty,
-                  transactionDate: deathForm.date,
-                  unitPrice,
-                  causeOfDeath: deathForm.causeOfDeath || undefined,
-                  notes: deathForm.notes || undefined
-                });
               }}
-              className="space-y-4"
             >
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-bold text-gray-700">Quantity</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max={livestock.trackingType === 'batch' ? String(livestock.quantity || '') : '1'}
-                    value={livestock.trackingType === 'batch' ? deathForm.quantity : 1}
-                    disabled={livestock.trackingType !== 'batch'}
-                    onChange={(e) => setDeathForm({ ...deathForm, quantity: e.target.value })}
-                    className="mt-1 rounded-xl h-12 disabled:bg-gray-50"
-                  />
-                  {livestock.trackingType === 'batch' && (
-                    <p className="text-xs text-gray-500 mt-1">Available in batch: {Number(livestock.quantity || 0)}</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-bold text-gray-700">Date</label>
-                  <Input
-                    type="date"
-                    value={deathForm.date}
-                    onChange={(e) => setDeathForm({ ...deathForm, date: e.target.value })}
-                    className="mt-1 rounded-xl h-12"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-gray-700">Estimated value per animal (₦)</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={deathForm.unitPrice}
-                  onChange={(e) => setDeathForm({ ...deathForm, unitPrice: e.target.value })}
-                  placeholder="Auto-filled from selling value"
-                  className="mt-1 rounded-xl h-12"
-                />
-                <p className="text-xs text-gray-500 mt-1">Leave empty to auto-calculate from the livestock selling value.</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-gray-700">Cause of death</label>
-                <select
-                  value={deathForm.causeOfDeath}
-                  onChange={(e) => setDeathForm({ ...deathForm, causeOfDeath: e.target.value })}
-                  className="mt-1 w-full h-12 rounded-xl border border-gray-200 bg-white px-3 text-sm"
-                >
-                  <option value="disease">Disease</option>
-                  <option value="accident">Accident</option>
-                  <option value="predator">Predator</option>
-                  <option value="old_age">Old Age</option>
-                  <option value="unknown">Unknown</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-bold text-gray-700">Notes</label>
-                <textarea
-                  value={deathForm.notes}
-                  onChange={(e) => setDeathForm({ ...deathForm, notes: e.target.value })}
-                  placeholder="Optional"
-                  className="mt-1 w-full min-h-[90px] rounded-xl border border-gray-200 p-3 text-sm"
-                />
-              </div>
-
-              {deathFormError ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-                  <p className="text-sm font-bold text-red-700">{deathFormError}</p>
-                </div>
-              ) : null}
-
-              {logDeathMutation.isError ? (
-                <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-                  <p className="text-sm font-bold text-red-700">Failed to log death</p>
-                  <p className="text-sm text-red-700/90">{getApiErrorMessage(logDeathMutation.error)}</p>
-                </div>
-              ) : null}
-
-              <div className="flex gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1 h-12 rounded-xl"
-                  onClick={() => {
-                    setShowDeathModal(false);
-                    setDeathFormError(null);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="destructive"
-                  className="flex-1 h-12 rounded-xl bg-red-500 hover:bg-red-600"
-                  disabled={logDeathMutation.isPending}
-                >
-                  {logDeathMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Saving…
-                    </>
-                  ) : (
-                    <>
-                      <Skull className="h-4 w-4 mr-2" />
-                      Confirm
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="log-death-form"
+              variant="destructive"
+              className="flex-1 sm:flex-none"
+              loading={logDeathMutation.isPending}
+            >
+              {logDeathMutation.isPending ? (
+                'Saving…'
+              ) : (
+                <>
+                  <Skull className="h-4 w-4 mr-2" aria-hidden="true" />
+                  Confirm
+                </>
+              )}
+            </Button>
+          </>
+        }
+      >
+        <div
+          role="note"
+          className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3"
+        >
+          <p className="text-sm font-bold text-amber-800">This action updates inventory &amp; profit</p>
+          <p className="text-xs text-amber-800/90">
+            It will reduce batch quantity (or mark the animal as deceased) and record a financial
+            loss so other features stay consistent.
+          </p>
         </div>
-      )}
+
+        <form
+          id="log-death-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            setDeathFormError(null);
+
+            const isBatch = livestock.trackingType === 'batch';
+            const maxQty = isBatch ? Number(livestock.quantity || 0) : 1;
+
+            const qty = isBatch ? Number.parseInt(String(deathForm.quantity || 1), 10) : 1;
+            if (!Number.isFinite(qty) || qty <= 0) {
+              setDeathFormError('Please enter a valid quantity.');
+              return;
+            }
+            if (isBatch && Number.isFinite(maxQty) && maxQty > 0 && qty > maxQty) {
+              setDeathFormError(`Death quantity (${qty}) cannot exceed batch quantity (${maxQty}).`);
+              return;
+            }
+
+            const unitPriceRaw = String(deathForm.unitPrice ?? '').trim();
+            const unitPrice = unitPriceRaw === '' ? undefined : Number(unitPriceRaw);
+            if (unitPriceRaw !== '' && (!Number.isFinite(unitPrice) || unitPrice < 0)) {
+              setDeathFormError('Estimated value per animal must be a valid number.');
+              return;
+            }
+
+            logDeathMutation.mutate({
+              transactionType: 'death',
+              livestockId,
+              species: livestock.species,
+              quantity: qty,
+              transactionDate: deathForm.date,
+              unitPrice,
+              causeOfDeath: deathForm.causeOfDeath || undefined,
+              notes: deathForm.notes || undefined
+            });
+          }}
+          className="space-y-4"
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="death-quantity" className="text-sm font-bold text-foreground">
+                Quantity
+              </label>
+              <Input
+                id="death-quantity"
+                type="number"
+                min="1"
+                max={livestock.trackingType === 'batch' ? String(livestock.quantity || '') : '1'}
+                value={livestock.trackingType === 'batch' ? deathForm.quantity : 1}
+                disabled={livestock.trackingType !== 'batch'}
+                onChange={(e) => setDeathForm({ ...deathForm, quantity: e.target.value })}
+                className="mt-1 rounded-xl h-12"
+              />
+              {livestock.trackingType === 'batch' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Available in batch: {Number(livestock.quantity || 0)}
+                </p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="death-date" className="text-sm font-bold text-foreground">
+                Date
+              </label>
+              <Input
+                id="death-date"
+                type="date"
+                value={deathForm.date}
+                onChange={(e) => setDeathForm({ ...deathForm, date: e.target.value })}
+                className="mt-1 rounded-xl h-12"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="death-unit-price" className="text-sm font-bold text-foreground">
+              Estimated value per animal (₦)
+            </label>
+            <Input
+              id="death-unit-price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={deathForm.unitPrice}
+              onChange={(e) => setDeathForm({ ...deathForm, unitPrice: e.target.value })}
+              placeholder="Auto-filled from selling value"
+              className="mt-1 rounded-xl h-12"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Leave empty to auto-calculate from the livestock selling value.
+            </p>
+          </div>
+
+          <div>
+            <label htmlFor="death-cause" className="text-sm font-bold text-foreground">
+              Cause of death
+            </label>
+            <select
+              id="death-cause"
+              value={deathForm.causeOfDeath}
+              onChange={(e) => setDeathForm({ ...deathForm, causeOfDeath: e.target.value })}
+              className="mt-1 w-full h-12 rounded-xl border border-border bg-background px-3 text-base sm:text-sm text-foreground"
+            >
+              <option value="disease">Disease</option>
+              <option value="accident">Accident</option>
+              <option value="predator">Predator</option>
+              <option value="old_age">Old Age</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="death-notes" className="text-sm font-bold text-foreground">
+              Notes
+            </label>
+            <textarea
+              id="death-notes"
+              value={deathForm.notes}
+              onChange={(e) => setDeathForm({ ...deathForm, notes: e.target.value })}
+              placeholder="Optional"
+              className="mt-1 w-full min-h-[90px] rounded-xl border border-border bg-background p-3 text-base sm:text-sm text-foreground"
+            />
+          </div>
+
+          {deathFormError ? (
+            <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+              <p className="text-sm font-bold text-destructive">{deathFormError}</p>
+            </div>
+          ) : null}
+
+          {logDeathMutation.isError ? (
+            <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+              <p className="text-sm font-bold text-destructive">Failed to log death</p>
+              <p className="text-sm text-destructive/90">{getApiErrorMessage(logDeathMutation.error)}</p>
+            </div>
+          ) : null}
+        </form>
+      </ModalShell>
 
       {/* Back Navigation */}
       <Button
         variant="ghost"
         onClick={goBack}
-        className="text-gray-500 hover:text-gray-900 -ml-2"
+        className="-ml-2 text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="mr-2 h-4 w-4" />
+        <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
         Back to Livestock
       </Button>
 
       {/* Header Card */}
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-[2.5rem] border border-border bg-card shadow-sm">
         <div className="relative">
           {/* Cover Image/Color */}
-          <div className={`h-48 ${livestock.imageUrls?.[0] ? '' : speciesColor}`}>
+          <div className={`h-44 sm:h-48 ${livestock.imageUrls?.[0] ? '' : speciesColor}`}>
             {livestock.imageUrls?.[0] && (
-              <img 
-                src={livestock.imageUrls[0]} 
-                alt={livestock.tagId || livestock.species} 
-                className="w-full h-full object-cover"
+              <img
+                src={livestock.imageUrls[0]}
+                alt={livestock.tagId || livestock.species}
+                className="h-full w-full object-cover"
               />
             )}
           </div>
 
           {/* Profile Picture */}
-          <div className="absolute -bottom-12 left-8">
-            <div className={`h-28 w-28 rounded-3xl border-4 border-white shadow-lg overflow-hidden ${speciesColor}`}>
+          <div className="absolute -bottom-12 left-4 sm:left-8">
+            <div className={`h-24 w-24 sm:h-28 sm:w-28 rounded-3xl border-4 border-white shadow-lg overflow-hidden ${speciesColor}`}>
               {livestock.imageUrls?.[0] ? (
-                <img 
-                  src={livestock.imageUrls[0]} 
-                  alt={livestock.tagId || livestock.species} 
-                  className="w-full h-full object-cover"
+                <img
+                  src={livestock.imageUrls[0]}
+                  alt={livestock.tagId || livestock.species}
+                  className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="flex h-full w-full items-center justify-center" aria-hidden="true">
                   <SpeciesIcon className="h-12 w-12 text-white/80" />
                 </div>
               )}
@@ -817,33 +855,34 @@ const LivestockDetailsPage = () => {
 
           {/* Actions */}
           <div className="absolute bottom-4 right-4 flex gap-2">
-            <Button 
-              variant="outline" 
-              className="bg-white/90 backdrop-blur rounded-xl text-red-500 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            <Button
+              variant="outline"
+              aria-label="Delete livestock"
+              title={isActionLocked ? 'This livestock is no longer active.' : 'Delete livestock'}
+              className="rounded-xl bg-card/90 text-red-500 backdrop-blur hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={isActionLocked}
-              title={isActionLocked ? 'This livestock is no longer active.' : undefined}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
 
         {/* Details */}
-        <div className="pt-16 pb-8 px-8">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-black text-gray-900">
+        <div className="px-4 pb-6 pt-16 sm:px-8 sm:pb-8">
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <div className="min-w-0">
+              <div className="mb-2 flex flex-wrap items-center gap-3">
+                <h1 className="min-w-0 break-words text-2xl font-black text-foreground sm:text-3xl">
                   {livestock.tagId || `${livestock.species || 'Livestock'} #${livestockIdSuffix || '----'}`}
                 </h1>
                 <HealthStatusBadge status={displayHealthStatus} />
               </div>
-              <div className="flex flex-wrap items-center gap-4 text-gray-500">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
                 <span className="capitalize font-medium">{livestock.breed || livestock.species || '-'}</span>
                 {livestock.tagId && (
                   <span className="flex items-center gap-1">
-                    <FileText className="h-4 w-4" />
+                    <FileText className="h-4 w-4" aria-hidden="true" />
                     {livestock.tagId}
                   </span>
                 )}
@@ -859,24 +898,23 @@ const LivestockDetailsPage = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="flex gap-6">
+            <div className="flex flex-wrap gap-3 sm:gap-4">
               {livestock.weight && (
-                <div className="text-center">
-                  <p className="text-2xl font-black text-gray-900">{livestock.weight} kg</p>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Weight</p>
-                </div>
+                <MiniStat
+                  label="Weight"
+                  value={`${livestock.weight} kg`}
+                  className="min-w-[8rem] flex-1"
+                />
               )}
               {getAge() && (
-                <div className="text-center">
-                  <p className="text-2xl font-black text-gray-900">{getAge()}</p>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Age</p>
-                </div>
+                <MiniStat label="Age" value={getAge()} className="min-w-[8rem] flex-1" />
               )}
               {(livestock.cost ?? livestock.acquisitionCost) ? (
-                <div className="text-center">
-                  <p className="text-2xl font-black text-gray-900">₦{(livestock.cost ?? livestock.acquisitionCost).toLocaleString()}</p>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">Value</p>
-                </div>
+                <MiniStat
+                  label="Value"
+                  value={`₦${(livestock.cost ?? livestock.acquisitionCost).toLocaleString()}`}
+                  className="min-w-[8rem] flex-1"
+                />
               ) : null}
             </div>
           </div>
@@ -884,35 +922,35 @@ const LivestockDetailsPage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-3">
-        <TabButton 
-          active={activeTab === 'overview'} 
+      <div className="flex flex-wrap gap-2 sm:gap-3" role="group" aria-label="Livestock detail sections">
+        <TabButton
+          active={activeTab === 'overview'}
           onClick={() => setActiveTab('overview')}
           icon={Activity}
           label="Overview"
         />
-        <TabButton 
-          active={activeTab === 'health'} 
+        <TabButton
+          active={activeTab === 'health'}
           onClick={() => setActiveTab('health')}
           icon={Heart}
           label="Health Records"
           count={healthRecordsCount || 0}
         />
-        <TabButton 
-          active={activeTab === 'weight'} 
+        <TabButton
+          active={activeTab === 'weight'}
           onClick={() => setActiveTab('weight')}
           icon={TrendingUp}
           label="Growth"
           count={livestock.weightHistory?.length || 0}
         />
-        <TabButton 
-          active={activeTab === 'breeding'} 
+        <TabButton
+          active={activeTab === 'breeding'}
           onClick={() => setActiveTab('breeding')}
           icon={Baby}
           label="Breeding"
         />
-        <TabButton 
-          active={activeTab === 'history'} 
+        <TabButton
+          active={activeTab === 'history'}
           onClick={() => setActiveTab('history')}
           icon={History}
           label="Activity"
@@ -926,40 +964,41 @@ const LivestockDetailsPage = () => {
           {activeTab === 'overview' && (
             <>
               {/* Basic Information */}
-              <Card className="border-none shadow-sm rounded-3xl">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold">Basic Information</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                  <InfoItem icon={PawPrint} label="Species" value={livestock.species?.charAt(0).toUpperCase() + livestock.species?.slice(1)} />
-                  <InfoItem icon={FileText} label="Breed" value={livestock.breed} />
-                  <InfoItem
-                    icon={Calendar}
-                    label={livestock.species === 'poultry' && livestock.trackingType === 'batch' ? 'Hatch Date' : 'Date of Birth'}
-                    value={formatDate(livestock.dateOfBirth)}
-                  />
-                  <InfoItem icon={Scale} label="Current Weight" value={livestock.weight ? `${livestock.weight} kg` : null} />
-                  <InfoItem icon={Calendar} label="Acquired" value={formatDate(livestock.acquisitionDate)} />
-                  <InfoItem icon={Activity} label="Acquisition Method" value={livestock.acquisitionMethod?.charAt(0).toUpperCase() + livestock.acquisitionMethod?.slice(1)} />
-                  {livestock.color && (
-                    <InfoItem icon={PawPrint} label="Color/Markings" value={livestock.color} />
-                  )}
-                  {livestock.housingUnit && (
-                    <InfoItem icon={MapPin} label="Housing Unit" value={livestock.housingUnit} />
-                  )}
-                </CardContent>
-              </Card>
+              <SectionCard
+                title="Basic Information"
+                className="rounded-3xl"
+                contentClassName="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:grid-cols-3"
+              >
+                <InfoItem icon={PawPrint} label="Species" value={livestock.species?.charAt(0).toUpperCase() + livestock.species?.slice(1)} />
+                <InfoItem icon={FileText} label="Breed" value={livestock.breed} />
+                <InfoItem
+                  icon={Calendar}
+                  label={livestock.species === 'poultry' && livestock.trackingType === 'batch' ? 'Hatch Date' : 'Date of Birth'}
+                  value={formatDate(livestock.dateOfBirth)}
+                />
+                <InfoItem icon={Scale} label="Current Weight" value={livestock.weight ? `${livestock.weight} kg` : null} />
+                <InfoItem icon={Calendar} label="Acquired" value={formatDate(livestock.acquisitionDate)} />
+                <InfoItem icon={Activity} label="Acquisition Method" value={livestock.acquisitionMethod?.charAt(0).toUpperCase() + livestock.acquisitionMethod?.slice(1)} />
+                {livestock.color && (
+                  <InfoItem icon={PawPrint} label="Color/Markings" value={livestock.color} />
+                )}
+                {livestock.housingUnit && (
+                  <InfoItem icon={MapPin} label="Housing Unit" value={livestock.housingUnit} />
+                )}
+              </SectionCard>
 
               {/* Health Check */}
-              <Card className="border-none shadow-sm rounded-3xl">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-xl font-bold">Health Check</CardTitle>
-                  <div className="flex gap-2">
+              <SectionCard
+                title="Health Check"
+                className="rounded-3xl"
+                action={
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       className="rounded-xl"
                       onClick={() => refetchHealthCheck()}
+                      loading={isHealthCheckFetching}
                       disabled={isActionLocked || isHealthCheckFetching}
                     >
                       {isHealthCheckFetching ? 'Refreshing…' : 'Refresh'}
@@ -968,294 +1007,286 @@ const LivestockDetailsPage = () => {
                       size="sm"
                       className="rounded-xl"
                       onClick={() => recomputeHealthCheckMutation.mutate()}
+                      loading={recomputeHealthCheckMutation.isPending}
                       disabled={isActionLocked || recomputeHealthCheckMutation.isPending}
                     >
                       {recomputeHealthCheckMutation.isPending ? 'Recomputing…' : 'Recompute'}
                     </Button>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {isHealthCheckLoading ? (
-                    <p className="text-gray-500">Loading health check…</p>
-                  ) : isHealthCheckError ? (
-                    <div className="space-y-3">
-                      <p className="text-sm font-bold text-red-600">Health check request failed</p>
-                      <p className="text-sm text-gray-600">{getApiErrorMessage(healthCheckError)}</p>
-                      <p className="text-xs text-gray-500">
-                        Endpoint: <span className="font-mono">GET /livestock/{livestockId}/health-check</span>
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {recomputeHealthCheckMutation.isError ? (
-                        <div className="rounded-2xl border border-red-200 bg-red-50 p-3">
-                          <p className="text-sm font-bold text-red-700">Recompute failed</p>
-                          <p className="text-sm text-red-700/90">{getApiErrorMessage(recomputeHealthCheckMutation.error)}</p>
-                          <p className="text-xs text-red-700/80 mt-1">
-                            Endpoint: <span className="font-mono">POST /livestock/{livestockId}/health-check/recompute</span>
-                          </p>
-                        </div>
-                      ) : null}
-
-                      {healthCheckReport ? (
-                        <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <p className="font-bold text-gray-900">Overall</p>
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-bold ${
-                            healthCheckReport.overallStatus === 'critical'
-                              ? 'bg-red-100 text-red-700'
-                              : healthCheckReport.overallStatus === 'warning'
-                              ? 'bg-amber-100 text-amber-700'
-                              : healthCheckReport.overallStatus === 'ok'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-gray-100 text-gray-700'
-                          }`}
-                        >
-                          {healthCheckReport.overallStatus || 'unknown'}
-                        </span>
+                }
+              >
+                {isHealthCheckLoading ? (
+                  <LoadingState label="Loading health check…" className="py-8" />
+                ) : isHealthCheckError ? (
+                  <div role="alert" className="space-y-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-4">
+                    <p className="text-sm font-bold text-destructive">Health check request failed</p>
+                    <p className="text-sm text-destructive/90">{getApiErrorMessage(healthCheckError)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Endpoint: <span className="font-mono">GET /livestock/{livestockId}/health-check</span>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {recomputeHealthCheckMutation.isError ? (
+                      <div role="alert" className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3">
+                        <p className="text-sm font-bold text-destructive">Recompute failed</p>
+                        <p className="text-sm text-destructive/90">{getApiErrorMessage(recomputeHealthCheckMutation.error)}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Endpoint: <span className="font-mono">POST /livestock/{livestockId}/health-check/recompute</span>
+                        </p>
                       </div>
+                    ) : null}
 
-                      {Array.isArray(healthCheckReport.checks) && healthCheckReport.checks.length > 0 ? (
-                        <div className="space-y-3">
-                          <p className="text-xs text-gray-500">
-                            Generated: {healthCheckReport.generatedAt ? new Date(healthCheckReport.generatedAt).toLocaleString() : '—'}
-                            {healthCheckReport.ai?.used ? ` • AI enhanced${healthCheckReport.ai?.model ? ` (${healthCheckReport.ai.model})` : ''}` : ''}
-                          </p>
+                    {healthCheckReport ? (
+                      <div className="space-y-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-bold text-foreground">Overall</p>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-bold ${
+                              healthCheckReport.overallStatus === 'critical'
+                                ? 'bg-red-100 text-red-700'
+                                : healthCheckReport.overallStatus === 'warning'
+                                ? 'bg-amber-100 text-amber-700'
+                                : healthCheckReport.overallStatus === 'ok'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            {healthCheckReport.overallStatus || 'unknown'}
+                          </span>
+                        </div>
 
-                          {healthCheckReport.ai?.summary ? (
-                            <div className="rounded-2xl border border-gray-200 bg-white p-3">
-                              <p className="text-xs font-bold text-gray-700">AI Summary</p>
-                              <p className="mt-1 text-sm text-gray-700">{healthCheckReport.ai.summary}</p>
-                            </div>
-                          ) : null}
+                        {Array.isArray(healthCheckReport.checks) && healthCheckReport.checks.length > 0 ? (
+                          <div className="space-y-3">
+                            <p className="text-xs text-muted-foreground">
+                              Generated: {healthCheckReport.generatedAt ? new Date(healthCheckReport.generatedAt).toLocaleString() : '—'}
+                              {healthCheckReport.ai?.used ? ` • AI enhanced${healthCheckReport.ai?.model ? ` (${healthCheckReport.ai.model})` : ''}` : ''}
+                            </p>
 
-                          {healthCheckReport.checks.map((check) => {
-                            const findings = Array.isArray(check.findings) ? check.findings : [];
-                            const recs = Array.isArray(check.recommendations) ? check.recommendations : [];
+                            {healthCheckReport.ai?.summary ? (
+                              <div className="rounded-2xl border border-border bg-card p-3">
+                                <p className="text-xs font-bold text-foreground">AI Summary</p>
+                                <p className="mt-1 text-sm text-muted-foreground">{healthCheckReport.ai.summary}</p>
+                              </div>
+                            ) : null}
 
-                            return (
-                              <div
-                                key={check.key}
-                                className={`p-3 rounded-2xl ${
-                                  check.key === 'ai_diagnosis_alert'
-                                    ? 'border border-amber-200 bg-amber-50'
-                                    : 'bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <p className="font-bold text-gray-900">{check.title || check.key}</p>
-                                  <span
-                                    className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                                      check.status === 'critical'
-                                        ? 'bg-red-100 text-red-700'
-                                        : check.status === 'warning'
-                                        ? 'bg-amber-100 text-amber-700'
-                                        : check.status === 'ok'
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-gray-100 text-gray-700'
-                                    }`}
-                                  >
-                                    {check.status}
-                                  </span>
-                                </div>
+                            {healthCheckReport.checks.map((check) => {
+                              const findings = Array.isArray(check.findings) ? check.findings : [];
+                              const recs = Array.isArray(check.recommendations) ? check.recommendations : [];
 
-                                {findings.length > 0 ? (
-                                  <ul className="mt-2 list-disc list-inside text-sm text-gray-600 space-y-1">
-                                    {findings.map((f, idx) => (
-                                      <li key={idx}>{f}</li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="mt-2 text-sm text-gray-500">No findings.</p>
-                                )}
+                              return (
+                                <div
+                                  key={check.key}
+                                  className={`p-3 rounded-2xl ${
+                                    check.key === 'ai_diagnosis_alert'
+                                      ? 'border border-amber-200 bg-amber-50'
+                                      : 'bg-muted'
+                                  }`}
+                                >
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="min-w-0 break-words font-bold text-foreground">{check.title || check.key}</p>
+                                    <span
+                                      className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-bold ${
+                                        check.status === 'critical'
+                                          ? 'bg-red-100 text-red-700'
+                                          : check.status === 'warning'
+                                          ? 'bg-amber-100 text-amber-700'
+                                          : check.status === 'ok'
+                                          ? 'bg-green-100 text-green-700'
+                                          : 'bg-muted text-muted-foreground'
+                                      }`}
+                                    >
+                                      {check.status}
+                                    </span>
+                                  </div>
 
-                                {recs.length > 0 ? (
-                                  <>
-                                    <p className="mt-3 text-xs font-bold text-gray-700">Recommendations</p>
-                                    <ul className="mt-1 list-disc list-inside text-sm text-gray-600 space-y-1">
-                                      {recs.map((r, idx) => (
-                                        <li key={idx}>{r}</li>
+                                  {findings.length > 0 ? (
+                                    <ul className="mt-2 list-disc list-inside text-sm text-muted-foreground space-y-1">
+                                      {findings.map((f, idx) => (
+                                        <li key={idx}>{f}</li>
                                       ))}
                                     </ul>
-                                  </>
-                                ) : null}
+                                  ) : (
+                                    <p className="mt-2 text-sm text-muted-foreground">No findings.</p>
+                                  )}
+
+                                  {recs.length > 0 ? (
+                                    <>
+                                      <p className="mt-3 text-xs font-bold text-foreground">Recommendations</p>
+                                      <ul className="mt-1 list-disc list-inside text-sm text-muted-foreground space-y-1">
+                                        {recs.map((r, idx) => (
+                                          <li key={idx}>{r}</li>
+                                        ))}
+                                      </ul>
+                                    </>
+                                  ) : null}
 
 
-                              </div>
-                            );
-                          })}
+                                </div>
+                              );
+                            })}
 
-                          <p className="text-xs text-gray-500">
-                            Note: for batch registrations, weight is treated as average weight per animal.
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-gray-500">No checks available yet.</p>
-                      )}
-                    </div>
-                      ) : (
-                        <p className="text-gray-500">No health-check report yet. Click “Recompute”.</p>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                            <p className="text-xs text-muted-foreground">
+                              Note: for batch registrations, weight is treated as average weight per animal.
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">No checks available yet.</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No health-check report yet. Click “Recompute”.</p>
+                    )}
+                  </div>
+                )}
+              </SectionCard>
 
               {/* Recent Weight History */}
               {livestock.weightHistory?.length > 0 && (
-                <Card className="border-none shadow-sm rounded-3xl">
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle className="text-xl font-bold">Weight History</CardTitle>
+                <SectionCard
+                  title="Weight History"
+                  className="rounded-3xl"
+                  action={
                     <Button variant="ghost" size="sm" onClick={() => setActiveTab('weight')}>
-                      View All <ChevronRight className="h-4 w-4 ml-1" />
+                      View All <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
                     </Button>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {recentWeightHistory.map((entry, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                          <div className="flex items-center gap-3">
-                            <div className="bg-primary/10 p-2 rounded-lg">
-                              <Scale className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-bold text-gray-900">{entry.weight} kg</p>
-                              <p className="text-xs text-gray-500">
-                                {formatDate(entry.recordedAt)}
-                              </p>
-                            </div>
+                  }
+                >
+                  <div className="space-y-3">
+                    {recentWeightHistory.map((entry, idx) => (
+                      <div key={idx} className="flex flex-wrap items-center justify-between gap-2 p-3 bg-muted rounded-xl">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="shrink-0 bg-primary/10 p-2 rounded-lg" aria-hidden="true">
+                            <Scale className="h-4 w-4 text-primary" />
                           </div>
-                          {idx < recentWeightHistory.length - 1 && recentWeightHistory[idx + 1] && (
-                            <span className={`text-sm font-bold ${
-                              entry.weight > recentWeightHistory[idx + 1].weight 
-                                ? 'text-green-600' 
-                                : 'text-red-600'
-                            }`}>
-                              {entry.weight > recentWeightHistory[idx + 1].weight ? '+' : ''}
-                              {(entry.weight - recentWeightHistory[idx + 1].weight).toFixed(1)} kg
-                            </span>
-                          )}
+                          <div className="min-w-0">
+                            <p className="font-bold text-foreground">{entry.weight} kg</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDate(entry.recordedAt)}
+                            </p>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
+                        {idx < recentWeightHistory.length - 1 && recentWeightHistory[idx + 1] && (
+                          <span className={`shrink-0 text-sm font-bold ${
+                            entry.weight > recentWeightHistory[idx + 1].weight
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}>
+                            {entry.weight > recentWeightHistory[idx + 1].weight ? '+' : ''}
+                            {(entry.weight - recentWeightHistory[idx + 1].weight).toFixed(1)} kg
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </SectionCard>
               )}
 
               {/* Notes */}
               {livestock.notes && (
-                <Card className="border-none shadow-sm rounded-3xl">
-                  <CardHeader>
-                    <CardTitle className="text-xl font-bold">Notes</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 whitespace-pre-wrap">{livestock.notes}</p>
-                  </CardContent>
-                </Card>
+                <SectionCard title="Notes" className="rounded-3xl">
+                  <p className="text-muted-foreground whitespace-pre-wrap">{livestock.notes}</p>
+                </SectionCard>
               )}
             </>
           )}
 
           {activeTab === 'health' && (
-            <Card className="border-none shadow-sm rounded-3xl">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-bold">Health Records</CardTitle>
-                <div className="relative">
+            <SectionCard
+              title="Health Records"
+              className="rounded-3xl"
+              action={
+                <div className="relative" ref={healthAddMenuRef}>
                   <Button
                     className="rounded-xl"
+                    aria-haspopup="true"
+                    aria-expanded={showHealthAddMenu}
                     onClick={() => {
                       if (isActionLocked) return;
                       setShowHealthAddMenu(!showHealthAddMenu);
                     }}
                     disabled={isActionLocked}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
+                    <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                     Add Record
                   </Button>
 
                   {showHealthAddMenu && !isActionLocked && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setShowHealthAddMenu(false)}
-                      />
-                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                    <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-border bg-card py-2 shadow-lg">
                         <button
+                          type="button"
                           onClick={() => {
                             setShowHealthAddMenu(false);
                             navigate(`/livestock/${livestockId}/health`, { state: { openAddModal: 'vaccination' } });
                           }}
-                          className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3"
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-muted"
                         >
-                          <Syringe className="h-4 w-4 text-blue-500" />
+                          <Syringe className="h-4 w-4 shrink-0 text-blue-500" aria-hidden="true" />
                           <span className="font-medium">Vaccination</span>
                         </button>
 
                         <button
+                          type="button"
                           onClick={() => {
                             setShowHealthAddMenu(false);
                             navigate(`/livestock/${livestockId}/health`, { state: { openAddModal: 'deworming' } });
                           }}
-                          className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3"
+                          className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-muted"
                         >
-                          <Activity className="h-4 w-4 text-purple-500" />
+                          <Activity className="h-4 w-4 shrink-0 text-purple-500" aria-hidden="true" />
                           <span className="font-medium">Deworming</span>
                         </button>
 
                         <button
-                          onClick={() => setShowHealthAddMenu(false)}
-                          className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3 opacity-50 cursor-not-allowed"
+                          type="button"
                           disabled
+                          className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-2.5 text-left opacity-50"
                         >
-                          <Bug className="h-4 w-4 text-red-500" />
+                          <Bug className="h-4 w-4 shrink-0 text-red-500" aria-hidden="true" />
                           <span className="font-medium">Illness</span>
-                          <span className="text-xs text-gray-400 ml-auto">Soon</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
                         </button>
 
                         <button
-                          onClick={() => setShowHealthAddMenu(false)}
-                          className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3 opacity-50 cursor-not-allowed"
+                          type="button"
                           disabled
+                          className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-2.5 text-left opacity-50"
                         >
-                          <Pill className="h-4 w-4 text-amber-500" />
+                          <Pill className="h-4 w-4 shrink-0 text-amber-500" aria-hidden="true" />
                           <span className="font-medium">Treatment</span>
-                          <span className="text-xs text-gray-400 ml-auto">Soon</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
                         </button>
 
                         <button
-                          onClick={() => setShowHealthAddMenu(false)}
-                          className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-3 opacity-50 cursor-not-allowed"
+                          type="button"
                           disabled
+                          className="flex w-full cursor-not-allowed items-center gap-3 px-4 py-2.5 text-left opacity-50"
                         >
-                          <Stethoscope className="h-4 w-4 text-green-500" />
+                          <Stethoscope className="h-4 w-4 shrink-0 text-green-500" aria-hidden="true" />
                           <span className="font-medium">Checkup</span>
-                          <span className="text-xs text-gray-400 ml-auto">Soon</span>
+                          <span className="ml-auto text-[10px] text-muted-foreground">Soon</span>
                         </button>
                       </div>
-                    </>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent>
+              }
+            >
                 {isFullHealthRecordsLoading ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-sm">Loading health records…</p>
-                  </div>
+                  <LoadingState label="Loading health records…" className="py-12" />
                 ) : healthRecords.length > 0 ? (
                   <div className="space-y-4">
                     {healthRecords.map((record, idx) => (
-                      <div key={idx} className="p-4 border border-gray-100 rounded-2xl">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            {record.type === 'vaccination' && <Syringe className="h-5 w-5 text-blue-500" />}
-                            {record.type === 'treatment' && <Pill className="h-5 w-5 text-amber-500" />}
-                            {record.type === 'checkup' && <Stethoscope className="h-5 w-5 text-green-500" />}
-                            {record.type === 'deworming' && <Activity className="h-5 w-5 text-purple-500" />}
-                            {record.type === 'illness' && <AlertTriangle className="h-5 w-5 text-red-500" />}
-                            <div>
-                              <h4 className="font-bold text-gray-900 capitalize">{record.type}</h4>
-                              <p className="text-sm text-gray-500">
+                      <div key={idx} className="p-4 border border-border rounded-2xl">
+                        <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+                          <div className="flex min-w-0 items-center gap-3">
+                            {record.type === 'vaccination' && <Syringe className="h-5 w-5 shrink-0 text-blue-500" aria-hidden="true" />}
+                            {record.type === 'treatment' && <Pill className="h-5 w-5 shrink-0 text-amber-500" aria-hidden="true" />}
+                            {record.type === 'checkup' && <Stethoscope className="h-5 w-5 shrink-0 text-green-500" aria-hidden="true" />}
+                            {record.type === 'deworming' && <Activity className="h-5 w-5 shrink-0 text-purple-500" aria-hidden="true" />}
+                            {record.type === 'illness' && <AlertTriangle className="h-5 w-5 shrink-0 text-red-500" aria-hidden="true" />}
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-foreground capitalize">{record.type}</h4>
+                              <p className="text-sm text-muted-foreground">
                                 {formatDate(
                                   record.date ||
                                     record.dateAdministered ||
@@ -1269,34 +1300,36 @@ const LivestockDetailsPage = () => {
                           </div>
                         </div>
                         {(record.description || record.notes) && (
-                          <p className="text-gray-600 text-sm">{record.description || record.notes}</p>
+                          <p className="text-sm text-muted-foreground">{record.description || record.notes}</p>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Heart className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="font-bold text-gray-900 mb-2">No health records yet</h3>
-                    <p className="text-gray-500 text-sm mb-4">Start tracking vaccinations, treatments, and checkups</p>
-                    <Button
-                      className="rounded-xl"
-                      onClick={() => navigate(`/livestock/${livestockId}/health`, { state: { openAddModal: 'vaccination' } })}
-                      disabled={isActionLocked}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Record
-                    </Button>
-                  </div>
+                  <EmptyState
+                    icon={<Heart className="h-8 w-8" aria-hidden="true" />}
+                    title="No health records yet"
+                    description="Start tracking vaccinations, treatments, and checkups"
+                    action={
+                      <Button
+                        className="rounded-xl"
+                        onClick={() => navigate(`/livestock/${livestockId}/health`, { state: { openAddModal: 'vaccination' } })}
+                        disabled={isActionLocked}
+                      >
+                        <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                        Add First Record
+                      </Button>
+                    }
+                  />
                 )}
-              </CardContent>
-            </Card>
+            </SectionCard>
           )}
 
           {activeTab === 'weight' && (
-            <Card className="border-none shadow-sm rounded-3xl">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-bold">Growth Tracking</CardTitle>
+            <SectionCard
+              title="Growth Tracking"
+              className="rounded-3xl"
+              action={
                 <Button
                   className="rounded-xl"
                   onClick={() => {
@@ -1305,73 +1338,71 @@ const LivestockDetailsPage = () => {
                   }}
                   disabled={isActionLocked}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                   Add Weight
                 </Button>
-              </CardHeader>
-              <CardContent>
+              }
+            >
                 {weightHistory.length > 0 ? (
                   <div className="space-y-4">
                     {/* Weight Chart Placeholder */}
-                    <div className="bg-gray-50 rounded-2xl p-6 text-center">
-                      <LineChart className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-500 text-sm">Weight chart coming soon</p>
+                    <div className="rounded-2xl bg-muted p-6 text-center">
+                      <LineChart className="mx-auto mb-3 h-12 w-12 text-muted-foreground" aria-hidden="true" />
+                      <p className="text-sm text-muted-foreground">Weight chart coming soon</p>
                     </div>
                     
                     {/* Weight History List */}
                     <div className="space-y-3">
                       {weightHistory.slice().reverse().map((entry, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                          <div className="flex items-center gap-4">
-                            <div className="bg-primary/10 p-3 rounded-xl">
+                        <div key={idx} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-muted p-4">
+                          <div className="flex min-w-0 items-center gap-4">
+                            <div className="shrink-0 rounded-xl bg-primary/10 p-3" aria-hidden="true">
                               <Scale className="h-5 w-5 text-primary" />
                             </div>
-                            <div>
-                              <p className="text-2xl font-black text-gray-900">{entry.weight} kg</p>
-                              <p className="text-sm text-gray-500">
+                            <div className="min-w-0">
+                              <p className="text-2xl font-black text-foreground">{entry.weight} kg</p>
+                              <p className="text-sm text-muted-foreground">
                                 {formatDate(entry.recordedAt)}
                               </p>
                             </div>
                           </div>
                           {entry.notes && (
-                            <p className="text-sm text-gray-500 max-w-xs text-right">{entry.notes}</p>
+                            <p className="max-w-xs break-words text-right text-sm text-muted-foreground">{entry.notes}</p>
                           )}
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Scale className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <h3 className="font-bold text-gray-900 mb-2">No weight records yet</h3>
-                    <p className="text-gray-500 text-sm mb-4">Track growth over time by adding weight measurements</p>
-                    <Button
-                      className="rounded-xl"
-                      onClick={() => {
-                        setWeightFormError(null);
-                        setShowAddWeightModal(true);
-                      }}
-                      disabled={isActionLocked}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add First Weight
-                    </Button>
-                  </div>
+                  <EmptyState
+                    icon={<Scale className="h-8 w-8" aria-hidden="true" />}
+                    title="No weight records yet"
+                    description="Track growth over time by adding weight measurements"
+                    action={
+                      <Button
+                        className="rounded-xl"
+                        onClick={() => {
+                          setWeightFormError(null);
+                          setShowAddWeightModal(true);
+                        }}
+                        disabled={isActionLocked}
+                      >
+                        <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                        Add First Weight
+                      </Button>
+                    }
+                  />
                 )}
-              </CardContent>
-            </Card>
+            </SectionCard>
           )}
 
           {activeTab === 'breeding' && (
-            <Card className="border-none shadow-sm rounded-3xl">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">Breeding Information</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <SectionCard
+              title="Breeding Information"
+              className="rounded-3xl"
+            >
                 {isFarmBreedingLoading ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-sm">Loading breeding records…</p>
-                  </div>
+                  <LoadingState label="Loading breeding records…" className="py-12" />
                 ) : (() => {
                   const all = farmBreedingData?.data || [];
                   const records = all
@@ -1419,27 +1450,29 @@ const LivestockDetailsPage = () => {
 
                   if (!latest) {
                     return (
-                      <div className="text-center py-12">
-                        <Baby className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                        <h3 className="font-bold text-gray-900 mb-2">No breeding records yet</h3>
-                        <p className="text-gray-500 text-sm mb-4">Track breeding cycles, pregnancies, and offspring</p>
-                        <Button
-                          className="rounded-xl"
-                          onClick={() => {
-                            const state = {
-                              openAddModal: true,
-                              prefillFemaleId: livestock.gender === 'female' ? livestockId : undefined,
-                              prefillMaleId: livestock.gender === 'male' ? livestockId : undefined
-                            };
+                      <EmptyState
+                        icon={<Baby className="h-8 w-8" aria-hidden="true" />}
+                        title="No breeding records yet"
+                        description="Track breeding cycles, pregnancies, and offspring"
+                        action={
+                          <Button
+                            className="rounded-xl"
+                            onClick={() => {
+                              const state = {
+                                openAddModal: true,
+                                prefillFemaleId: livestock.gender === 'female' ? livestockId : undefined,
+                                prefillMaleId: livestock.gender === 'male' ? livestockId : undefined
+                              };
 
-                            navigate(`/livestock-breeding${qs}`, { state });
-                          }}
-                          disabled={isActionLocked}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Breeding Record
-                        </Button>
-                      </div>
+                              navigate(`/livestock-breeding${qs}`, { state });
+                            }}
+                            disabled={isActionLocked}
+                          >
+                            <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
+                            Add Breeding Record
+                          </Button>
+                        }
+                      />
                     );
                   }
 
@@ -1450,29 +1483,29 @@ const LivestockDetailsPage = () => {
 
                   return (
                     <div className="space-y-4">
-                      <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs text-gray-500 uppercase tracking-wider">Latest record</p>
-                            <h3 className="text-lg font-black text-gray-900 mt-1">
+                      <div className="rounded-2xl border border-border bg-muted p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground">Latest record</p>
+                            <h3 className="mt-1 break-words text-lg font-black text-foreground">
                               {livestock.gender === 'female' ? 'Bred with ' : 'Sired with '}
-                              <span className="text-gray-700">{partner}</span>
+                              <span className="text-foreground">{partner}</span>
                             </h3>
-                            <div className="flex flex-wrap gap-3 text-sm text-gray-600 mt-2">
+                            <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
+                                <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
                                 {latest.breedingDate ? new Date(latest.breedingDate).toLocaleDateString() : '—'}
                               </span>
                               {latest.expectedDueDate && (
                                 <span className="flex items-center gap-1">
-                                  <Clock className="h-4 w-4" />
+                                  <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
                                   Due: {new Date(latest.expectedDueDate).toLocaleDateString()}
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          <div className="flex flex-col items-end gap-2">
+                          <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
                             <span
                               className={`px-3 py-1 rounded-full text-xs font-bold ${
                                 isPregnant ? 'bg-pink-100 text-pink-700' : 'bg-amber-100 text-amber-700'
@@ -1481,13 +1514,13 @@ const LivestockDetailsPage = () => {
                               {isPregnant ? 'Pregnant' : (latest.status || 'bred')}
                             </span>
                             {latest.breedingMethod && (
-                              <span className="text-xs text-gray-500 capitalize">{latest.breedingMethod}</span>
+                              <span className="text-xs capitalize text-muted-foreground">{latest.breedingMethod}</span>
                             )}
                           </div>
                         </div>
 
                         {(latest.notes || latest.observations) && (
-                          <p className="text-sm text-gray-600 mt-3">{latest.notes || latest.observations}</p>
+                          <p className="mt-3 break-words text-sm text-muted-foreground">{latest.notes || latest.observations}</p>
                         )}
                       </div>
 
@@ -1497,7 +1530,7 @@ const LivestockDetailsPage = () => {
                           className="rounded-xl"
                           onClick={() => navigate(`/livestock-breeding${qs}`)}
                         >
-                          View Breeding Records <ChevronRight className="h-4 w-4 ml-1" />
+                          View Breeding Records <ChevronRight className="ml-1 h-4 w-4" aria-hidden="true" />
                         </Button>
                         <Button
                           className="rounded-xl"
@@ -1514,7 +1547,7 @@ const LivestockDetailsPage = () => {
                             navigate(`/livestock-breeding${qs}`, { state });
                           }}
                         >
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                           Add Breeding Record
                         </Button>
                       </div>
@@ -1525,34 +1558,28 @@ const LivestockDetailsPage = () => {
                     </div>
                   );
                 })()}
-              </CardContent>
-            </Card>
+            </SectionCard>
           )}
 
           {activeTab === 'history' && (
-            <Card className="border-none shadow-sm rounded-3xl">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">Activity History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <History className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="font-bold text-gray-900 mb-2">Activity log coming soon</h3>
-                  <p className="text-gray-500 text-sm">All changes and events will be tracked here</p>
-                </div>
-              </CardContent>
-            </Card>
+            <SectionCard title="Activity History" className="rounded-3xl">
+              <EmptyState
+                icon={<History className="h-8 w-8" aria-hidden="true" />}
+                title="Activity log coming soon"
+                description="All changes and events will be tracked here"
+              />
+            </SectionCard>
           )}
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Quick Actions */}
-          <Card className="border-none shadow-sm rounded-3xl">
-            <CardHeader>
-              <CardTitle className="text-lg font-bold">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
+          <SectionCard
+            title="Quick Actions"
+            className="rounded-3xl"
+            contentClassName="space-y-3"
+          >
               <Button
                 variant="outline"
                 className="w-full justify-start rounded-xl h-12"
@@ -1560,9 +1587,10 @@ const LivestockDetailsPage = () => {
                   setActiveTab('overview');
                   recomputeHealthCheckMutation.mutate();
                 }}
+                loading={recomputeHealthCheckMutation.isPending}
                 disabled={isActionLocked || recomputeHealthCheckMutation.isPending}
               >
-                <Stethoscope className="h-4 w-4 mr-3 text-primary" />
+                <Stethoscope className="h-4 w-4 mr-3 text-primary" aria-hidden="true" />
                 {recomputeHealthCheckMutation.isPending ? 'Running…' : 'AI Health Check'}
               </Button>
               <Button
@@ -1571,7 +1599,7 @@ const LivestockDetailsPage = () => {
                 onClick={() => navigate(`/livestock/${livestockId}/health`, { state: { openAddModal: 'vaccination' } })}
                 disabled={isActionLocked}
               >
-                <Syringe className="h-4 w-4 mr-3 text-blue-500" />
+                <Syringe className="h-4 w-4 mr-3 text-blue-500" aria-hidden="true" />
                 Log Vaccination
               </Button>
               <Button
@@ -1580,7 +1608,7 @@ const LivestockDetailsPage = () => {
                 onClick={() => navigate(`/livestock/${livestockId}/health`, { state: { openAddModal: 'deworming' } })}
                 disabled={isActionLocked}
               >
-                <Activity className="h-4 w-4 mr-3 text-purple-500" />
+                <Activity className="h-4 w-4 mr-3 text-purple-500" aria-hidden="true" />
                 Log Deworming
               </Button>
               <Button
@@ -1593,7 +1621,7 @@ const LivestockDetailsPage = () => {
                 }}
                 disabled={isActionLocked}
               >
-                <Scale className="h-4 w-4 mr-3 text-green-500" />
+                <Scale className="h-4 w-4 mr-3 text-green-500" aria-hidden="true" />
                 Record Weight
               </Button>
               <Button
@@ -1602,7 +1630,7 @@ const LivestockDetailsPage = () => {
                 onClick={() => navigate(`/livestock/${livestockId}/health`)}
                 disabled={isActionLocked}
               >
-                <Pill className="h-4 w-4 mr-3 text-amber-500" />
+                <Pill className="h-4 w-4 mr-3 text-amber-500" aria-hidden="true" />
                 Add Treatment
               </Button>
 
@@ -1634,74 +1662,73 @@ const LivestockDetailsPage = () => {
                   setShowDeathModal(true);
                 }}
               >
-                <Skull className="h-4 w-4 mr-3" />
+                <Skull className="h-4 w-4 mr-3" aria-hidden="true" />
                 {livestock.trackingType === 'batch' ? 'Log Deaths' : 'Mark as Deceased'}
               </Button>
-            </CardContent>
-          </Card>
+          </SectionCard>
 
           {/* Lineage */}
           {(livestock.sireId || livestock.damId) && (
-            <Card className="border-none shadow-sm rounded-3xl">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">Lineage</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <SectionCard
+              title="Lineage"
+              className="rounded-3xl"
+              contentClassName="space-y-3"
+            >
                 {livestock.sireId && (
-                  <Link to={`/livestock/${livestock.sireId._id || livestock.sireId}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="bg-blue-100 p-2 rounded-lg">
+                  <Link
+                    to={`/livestock/${livestock.sireId._id || livestock.sireId}`}
+                    className="flex min-w-0 items-center gap-3 rounded-xl bg-muted p-3 transition-colors hover:bg-primary/5"
+                  >
+                    <div className="shrink-0 rounded-lg bg-blue-100 p-2" aria-hidden="true">
                       <PawPrint className="h-4 w-4 text-blue-600" />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500">Sire (Father)</p>
-                      <p className="font-bold text-gray-900">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-muted-foreground">Sire (Father)</p>
+                      <p className="break-words font-bold text-foreground">
                         {livestock.sireId?.name || livestock.sireId?.tagId || 'View'}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   </Link>
                 )}
                 {livestock.damId && (
-                  <Link to={`/livestock/${livestock.damId._id || livestock.damId}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                    <div className="bg-pink-100 p-2 rounded-lg">
+                  <Link
+                    to={`/livestock/${livestock.damId._id || livestock.damId}`}
+                    className="flex min-w-0 items-center gap-3 rounded-xl bg-muted p-3 transition-colors hover:bg-primary/5"
+                  >
+                    <div className="shrink-0 rounded-lg bg-pink-100 p-2" aria-hidden="true">
                       <PawPrint className="h-4 w-4 text-pink-600" />
                     </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500">Dam (Mother)</p>
-                      <p className="font-bold text-gray-900">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-muted-foreground">Dam (Mother)</p>
+                      <p className="break-words font-bold text-foreground">
                         {livestock.damId?.name || livestock.damId?.tagId || 'View'}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   </Link>
                 )}
-              </CardContent>
-            </Card>
+            </SectionCard>
           )}
 
           {/* Farm Info */}
           {livestock.farmId && (
-            <Card className="border-none shadow-sm rounded-3xl">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold">Farm</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link 
-                  to={`/farms/${livestock.farmId._id || livestock.farmId}`}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-                >
-                  <div className="bg-green-100 p-2 rounded-lg">
-                    <MapPin className="h-4 w-4 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-gray-900">
-                      {livestock.farmId?.name || 'View Farm'}
-                    </p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
-                </Link>
-              </CardContent>
-            </Card>
+            <SectionCard title="Farm" className="rounded-3xl">
+              <Link
+                to={`/farms/${livestock.farmId._id || livestock.farmId}`}
+                className="flex min-w-0 items-center gap-3 rounded-xl bg-muted p-3 transition-colors hover:bg-primary/5"
+              >
+                <div className="shrink-0 rounded-lg bg-green-100 p-2" aria-hidden="true">
+                  <MapPin className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="break-words font-bold text-foreground">
+                    {livestock.farmId?.name || 'View Farm'}
+                  </p>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              </Link>
+            </SectionCard>
           )}
         </div>
       </div>

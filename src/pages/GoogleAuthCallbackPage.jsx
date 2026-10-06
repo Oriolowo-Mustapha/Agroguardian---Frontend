@@ -87,7 +87,7 @@ const GoogleAuthCallbackPage = () => {
   }, [location.search, location.hash, navigate, setAuth]);
 
   return (
-    <div className="min-h-screen bg-[#FDFCF0] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 sm:p-6">
       <Card className="w-full max-w-md shadow-xl border-none">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Signing you in…</CardTitle>
@@ -95,8 +95,8 @@ const GoogleAuthCallbackPage = () => {
         <CardContent>
           {error ? (
             <div className="space-y-4">
-              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <div role="alert" className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-medium border border-destructive/20 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
                   <div className="font-bold">Google sign-in failed</div>
                   <div className="mt-1">{error}</div>
@@ -107,8 +107,8 @@ const GoogleAuthCallbackPage = () => {
               </Button>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-3 text-gray-700 font-medium">
-              <Loader2 className="h-5 w-5 animate-spin" />
+            <div role="status" aria-live="polite" className="flex items-center justify-center gap-3 text-muted-foreground font-medium">
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
               {done ? 'Redirecting…' : 'Completing Google authentication…'}
             </div>
           )}

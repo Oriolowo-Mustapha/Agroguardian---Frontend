@@ -4,19 +4,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  X,
   Plus,
   Upload,
-  Loader2,
   PawPrint,
   Info,
-  Check,
   Beef,
   Bird,
   Fish,
   Rabbit
 } from 'lucide-react';
 import api from '../lib/axios';
+import ModalShell from './ui/ModalShell';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 
@@ -219,37 +217,51 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
     createMutation.mutate(data);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-3xl w-full max-w-2xl my-auto shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center z-10 rounded-t-3xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-xl">
-              <PawPrint className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">Add Livestock</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="h-6 w-6 text-gray-400" />
-          </button>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Add Livestock"
+      size="lg"
+      icon={
+        <div className="bg-primary/10 p-2 rounded-xl">
+          <PawPrint className="h-6 w-6 text-primary" aria-hidden="true" />
         </div>
-
-        {/* Form */}
-        <div className="overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-3">
-                <Info className="h-5 w-5 flex-shrink-0" />
-                {error}
-              </div>
+      }
+      footer={
+        <>
+          <Button type="button" variant="outline" className="flex-1 rounded-xl h-12" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit(onSubmit)}
+            loading={createMutation.isPending}
+            className="flex-1 rounded-xl h-12 font-bold shadow-lg shadow-primary/20"
+          >
+            {createMutation.isPending ? (
+              'Adding...'
+            ) : (
+              <>
+                <Plus className="mr-2 h-5 w-5" aria-hidden="true" />
+                Add Livestock
+              </>
             )}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {error && (
+          <div role="alert" className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-medium border border-destructive/20 flex items-center gap-3">
+            <Info className="h-5 w-5 shrink-0" aria-hidden="true" />
+            {error}
+          </div>
+        )}
 
             {/* Species Selection */}
             <div className="space-y-4">
-              <label className="text-sm font-bold text-gray-700">Select Species *</label>
+              <label className="text-sm font-bold text-foreground">Select Species *</label>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                 {SPECIES_OPTIONS.map((species) => {
                   const Icon = species.icon;
@@ -259,50 +271,53 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
                       key={species.value}
                       type="button"
                       onClick={() => setValue('species', species.value)}
+                      aria-pressed={isSelected}
                       className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${
                         isSelected
                           ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-gray-200 hover:border-primary/50'
+                          : 'border-border hover:border-primary/50'
                       }`}
                     >
-                      <Icon className={`h-8 w-8 ${isSelected ? 'text-primary' : 'text-gray-400'}`} />
+                      <Icon className={`h-8 w-8 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} aria-hidden="true" />
                       <span className="text-xs font-bold">{species.label}</span>
                     </button>
                   );
                 })}
               </div>
               {errors.species && (
-                <p className="text-xs text-red-500 font-medium">{errors.species.message}</p>
+                <p role="alert" className="text-xs text-destructive font-medium">{errors.species.message}</p>
               )}
             </div>
 
             {/* Tracking Type */}
             <div className="space-y-4">
-              <label className="text-sm font-bold text-gray-700">Tracking Type</label>
+              <label className="text-sm font-bold text-foreground">Tracking Type</label>
               <div className="flex gap-4">
                 <button
                   type="button"
                   onClick={() => setValue('trackingType', 'individual')}
+                  aria-pressed={trackingType === 'individual'}
                   className={`flex-1 p-4 rounded-xl border-2 transition-all ${
                     trackingType === 'individual'
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 hover:border-primary/50'
+                      : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <h4 className="font-bold text-gray-900">Individual</h4>
-                  <p className="text-xs text-gray-500 mt-1">Track a single animal with unique ID</p>
+                  <h4 className="font-bold text-foreground">Individual</h4>
+                  <p className="text-xs text-muted-foreground mt-1">Track a single animal with unique ID</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => setValue('trackingType', 'batch')}
+                  aria-pressed={trackingType === 'batch'}
                   className={`flex-1 p-4 rounded-xl border-2 transition-all ${
                     trackingType === 'batch'
                       ? 'border-primary bg-primary/10'
-                      : 'border-gray-200 hover:border-primary/50'
+                      : 'border-border hover:border-primary/50'
                   }`}
                 >
-                  <h4 className="font-bold text-gray-900">Batch</h4>
-                  <p className="text-xs text-gray-500 mt-1">Track a group (e.g., 50 chickens)</p>
+                  <h4 className="font-bold text-foreground">Batch</h4>
+                  <p className="text-xs text-muted-foreground mt-1">Track a group (e.g., 50 chickens)</p>
                 </button>
               </div>
             </div>
@@ -311,49 +326,49 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
             <div className="space-y-6">
               <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Basic Information</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 {trackingType === 'individual' ? (
                   <>
                     <div className="space-y-2">
-                      <label className="text-sm font-bold text-gray-700">
+                      <label className="text-sm font-bold text-foreground">
                         Tag/ID Number{tagIdRequired ? ' *' : ''}
                       </label>
                       <Input
                         placeholder="e.g., EAR-001"
                         {...register('tagId')}
-                        className={errors.tagId ? 'border-red-500' : ''}
+                        className={errors.tagId ? 'border-destructive' : ''}
                       />
                       {errors.tagId && (
-                        <p className="text-xs text-red-500 font-medium">{errors.tagId.message}</p>
+                        <p role="alert" className="text-xs text-destructive font-medium">{errors.tagId.message}</p>
                       )}
                     </div>
                   </>
                 ) : (
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Quantity *</label>
+                    <label className="text-sm font-bold text-foreground">Quantity *</label>
                     <Input 
                       type="number" 
                       min="1" 
                       placeholder="e.g., 50" 
                       {...register('quantity')} 
-                      className={errors.quantity ? 'border-red-500' : ''}
+                      className={errors.quantity ? 'border-destructive' : ''}
                     />
                     {errors.quantity && (
-                      <p className="text-xs text-red-500">{errors.quantity.message}</p>
+                      <p role="alert" className="text-xs text-destructive">{errors.quantity.message}</p>
                     )}
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Breed</label>
+                  <label className="text-sm font-bold text-foreground">Breed</label>
                   <Input placeholder="e.g., Holstein, Angus" {...register('breed')} />
                 </div>
 
                 {trackingType === 'individual' && (
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Gender</label>
+                    <label className="text-sm font-bold text-foreground">Gender</label>
                     <select
-                      className="w-full h-10 px-3 bg-white border border-gray-200 rounded-lg text-sm"
+                      className="w-full h-11 px-3 bg-background border border-border rounded-lg text-base sm:text-sm"
                       {...register('gender')}
                     >
                       <option value="unknown">Unknown</option>
@@ -366,10 +381,10 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
                 {/* Poultry Type */}
                 {selectedSpecies === 'poultry' && (
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Poultry Type *</label>
+                    <label className="text-sm font-bold text-foreground">Poultry Type *</label>
                     <select
-                      className={`w-full h-10 px-3 bg-white border rounded-lg text-sm ${
-                        errors.poultryType ? 'border-red-500' : 'border-gray-200'
+                      className={`w-full h-11 px-3 bg-background border rounded-lg text-base sm:text-sm ${
+                        errors.poultryType ? 'border-destructive' : 'border-border'
                       }`}
                       {...register('poultryType')}
                     >
@@ -381,7 +396,7 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
                       ))}
                     </select>
                     {errors.poultryType && (
-                      <p className="text-xs text-red-500 font-medium">{errors.poultryType.message}</p>
+                      <p role="alert" className="text-xs text-destructive font-medium">{errors.poultryType.message}</p>
                     )}
                   </div>
                 )}
@@ -389,9 +404,9 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
                 {/* Fish Type */}
                 {selectedSpecies === 'fish' && (
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">Fish Type</label>
+                    <label className="text-sm font-bold text-foreground">Fish Type</label>
                     <select
-                      className="w-full h-10 px-3 bg-white border border-gray-200 rounded-lg text-sm"
+                      className="w-full h-11 px-3 bg-background border border-border rounded-lg text-base sm:text-sm"
                       {...register('fishType')}
                     >
                       <option value="">Select type...</option>
@@ -410,23 +425,23 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
             <div className="space-y-6">
               <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Acquisition Details</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Acquisition Date *</label>
+                  <label className="text-sm font-bold text-foreground">Acquisition Date *</label>
                   <Input 
                     type="date" 
                     {...register('acquisitionDate')} 
-                    className={errors.acquisitionDate ? 'border-red-500' : ''}
+                    className={errors.acquisitionDate ? 'border-destructive' : ''}
                   />
                   {errors.acquisitionDate && (
-                    <p className="text-xs text-red-500">{errors.acquisitionDate.message}</p>
+                    <p role="alert" className="text-xs text-destructive">{errors.acquisitionDate.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">How Acquired</label>
+                  <label className="text-sm font-bold text-foreground">How Acquired</label>
                   <select
-                    className="w-full h-10 px-3 bg-white border border-gray-200 rounded-lg text-sm"
+                    className="w-full h-11 px-3 bg-background border border-border rounded-lg text-base sm:text-sm"
                     {...register('acquisitionMethod')}
                   >
                     {ACQUISITION_METHODS.map((method) => (
@@ -439,7 +454,7 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
 
                 {acquisitionMethod === 'purchase' && (
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
+                    <label className="text-sm font-bold text-foreground">
                       Purchase Amount (₦) *
                     </label>
                     <Input
@@ -447,50 +462,50 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
                       min="0"
                       placeholder="0"
                       {...register('acquisitionCost')}
-                      className={errors.acquisitionCost ? 'border-red-500' : ''}
+                      className={errors.acquisitionCost ? 'border-destructive' : ''}
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {trackingType === 'batch'
                         ? 'Total amount paid for the whole batch.'
                         : 'Amount paid for the animal.'}
                     </p>
                     {errors.acquisitionCost && (
-                      <p className="text-xs text-red-500 font-medium">{errors.acquisitionCost.message}</p>
+                      <p role="alert" className="text-xs text-destructive font-medium">{errors.acquisitionCost.message}</p>
                     )}
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Estimated Selling Value (₦) *</label>
+                  <label className="text-sm font-bold text-foreground">Estimated Selling Value (₦) *</label>
                   <Input
                     type="number"
                     min="0"
                     placeholder="0"
                     {...register('cost')}
-                    className={errors.cost ? 'border-red-500' : ''}
+                    className={errors.cost ? 'border-destructive' : ''}
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {trackingType === 'batch'
                       ? 'Total expected selling value for the whole batch.'
                       : 'Expected selling value for the animal.'}
                   </p>
                   {errors.cost && (
-                    <p className="text-xs text-red-500 font-medium">{errors.cost.message}</p>
+                    <p role="alert" className="text-xs text-destructive font-medium">{errors.cost.message}</p>
                   )}
                 </div>
 
                 {(trackingType === 'individual' || (selectedSpecies === 'poultry' && trackingType === 'batch')) && (
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-gray-700">
+                    <label className="text-sm font-bold text-foreground">
                       {selectedSpecies === 'poultry' && trackingType === 'batch' ? 'Hatch Date *' : 'Date of Birth'}
                     </label>
                     <Input
                       type="date"
                       {...register('dateOfBirth')}
-                      className={errors.dateOfBirth ? 'border-red-500' : ''}
+                      className={errors.dateOfBirth ? 'border-destructive' : ''}
                     />
                     {errors.dateOfBirth && (
-                      <p className="text-xs text-red-500 font-medium">{errors.dateOfBirth.message}</p>
+                      <p role="alert" className="text-xs text-destructive font-medium">{errors.dateOfBirth.message}</p>
                     )}
                   </div>
                 )}
@@ -501,9 +516,9 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
             <div className="space-y-6">
               <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Physical Attributes</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">
+                  <label className="text-sm font-bold text-foreground">
                     {trackingType === 'batch'
                       ? (selectedSpecies === 'poultry'
                         ? 'Average Weight per Bird (kg) *'
@@ -516,25 +531,25 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
                     min="0" 
                     placeholder={trackingType === 'batch' ? 'e.g., 1.8' : 'e.g., 350'}
                     {...register('weight')} 
-                    className={errors.weight ? 'border-red-500' : ''}
+                    className={errors.weight ? 'border-destructive' : ''}
                   />
                   {trackingType === 'batch' && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       Enter the average live weight of one {selectedSpecies === 'poultry' ? 'bird' : 'animal'} in this batch.
                     </p>
                   )}
                   {errors.weight && (
-                    <p className="text-xs text-red-500 font-medium">{errors.weight.message}</p>
+                    <p role="alert" className="text-xs text-destructive font-medium">{errors.weight.message}</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Color/Markings</label>
+                  <label className="text-sm font-bold text-foreground">Color/Markings</label>
                   <Input placeholder="e.g., Black and white" {...register('color')} />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Housing Unit</label>
+                  <label className="text-sm font-bold text-foreground">Housing Unit</label>
                   <Input placeholder="e.g., Pen A, Coop 1" {...register('housingUnit')} />
                 </div>
               </div>
@@ -542,24 +557,33 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
 
             {/* Image Upload */}
             <div className="space-y-4">
-              <label className="text-sm font-bold text-gray-700">Photo</label>
+              <label className="text-sm font-bold text-foreground">Photo</label>
               <div
-                className="relative h-48 rounded-2xl border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors bg-gray-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden group"
+                role="button"
+                tabIndex={0}
+                aria-label="Upload livestock photo"
+                className="relative h-48 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted flex flex-col items-center justify-center cursor-pointer overflow-hidden group"
                 onClick={() => document.getElementById('livestock-image').click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    document.getElementById('livestock-image').click();
+                  }
+                }}
               >
                 {previewUrl ? (
                   <>
                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                       <p className="text-white font-bold">Change Image</p>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="bg-white p-3 rounded-full shadow-sm mb-2">
-                      <Upload className="h-6 w-6 text-primary" />
+                    <div className="bg-card p-3 rounded-full shadow-sm mb-2">
+                      <Upload className="h-6 w-6 text-primary" aria-hidden="true" />
                     </div>
-                    <p className="text-sm text-gray-500 font-medium">Click to upload photo</p>
+                    <p className="text-sm text-muted-foreground font-medium">Click to upload photo</p>
                   </>
                 )}
                 <input
@@ -574,41 +598,15 @@ const AddLivestockModal = ({ isOpen, onClose, farmId }) => {
 
             {/* Notes */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700">Notes</label>
+              <label className="text-sm font-bold text-foreground">Notes</label>
               <textarea
-                className="w-full min-h-[80px] bg-white border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+                className="w-full min-h-[80px] bg-background border border-border rounded-lg p-3 text-base sm:text-sm focus:ring-2 focus:ring-primary outline-none"
                 placeholder="Any additional notes..."
                 {...register('notes')}
               />
             </div>
           </form>
-        </div>
-
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-100 flex gap-4 bg-gray-50/50 rounded-b-3xl">
-          <Button type="button" variant="outline" className="flex-1 rounded-xl h-12" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit(onSubmit)}
-            className="flex-1 rounded-xl h-12 font-bold shadow-lg shadow-primary/20"
-            disabled={createMutation.isPending}
-          >
-            {createMutation.isPending ? (
-              <>
-                <Loader2 className="animate-spin mr-2 h-5 w-5" />
-                Adding...
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 h-5 w-5" />
-                Add Livestock
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 };
 

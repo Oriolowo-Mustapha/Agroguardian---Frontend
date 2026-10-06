@@ -11,10 +11,11 @@ import {
   Plus,
   Clock,
   PawPrint,
-  Image as ImageIcon,
-  Loader2
+  Image as ImageIcon
 } from 'lucide-react';
 import api from '../lib/axios';
+import { Button } from '../components/ui/Button';
+import { EmptyState, LoadingState } from '../components/ui/States';
 
 const speciesOptions = [
   { value: 'cattle', label: 'Cattle', emoji: '🐄' },
@@ -187,7 +188,7 @@ export default function VetConsultationPage() {
     const styles = {
       active: 'bg-green-100 text-green-700',
       resolved: 'bg-blue-100 text-blue-700',
-      closed: 'bg-gray-100 text-gray-700'
+      closed: 'bg-muted text-muted-foreground'
     };
     return (
       <span className={`px-2 py-0.5 rounded-full text-xs ${styles[status] || styles.active}`}>
@@ -204,146 +205,136 @@ export default function VetConsultationPage() {
 
   if (!selectedFarm) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <PawPrint className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Please select a farm first</p>
-          <Link to="/farms" className="text-green-600 hover:underline">Go to Farms</Link>
-        </div>
-      </div>
+      <EmptyState
+        icon={<PawPrint className="h-8 w-8" aria-hidden="true" />}
+        title="No farm selected"
+        description="Please select a farm first"
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/farms">Go to Farms</Link>
+          </Button>
+        }
+      />
     );
   }
 
+  const consultationList = loadingConsultations ? (
+    <LoadingState className="py-8" label="Loading consultations..." />
+  ) : consultations.length === 0 ? (
+    <EmptyState
+      className="py-8"
+      icon={<MessageCircle className="h-8 w-8" aria-hidden="true" />}
+      title="No consultations yet"
+    />
+  ) : (
+    <div className="divide-y">
+      {consultations.map(c => (
+        <button
+          key={c._id}
+          type="button"
+          onClick={() => handleSelectConsultation(c._id)}
+          aria-current={activeConsultation === c._id ? 'true' : undefined}
+          className={`w-full p-4 text-left hover:bg-muted ${
+            activeConsultation === c._id ? 'bg-green-50 border-l-4 border-green-600' : ''
+          }`}
+        >
+          <div className="flex items-start justify-between mb-1 gap-2">
+            <span className="text-lg" aria-hidden="true">
+              {speciesOptions.find(s => s.value === c.species)?.emoji || '🐾'}
+            </span>
+            {getStatusBadge(c.status)}
+          </div>
+          <p className="font-medium text-sm truncate">
+            {c.title || c.messages?.[0]?.content?.slice(0, 50) || 'New Consultation'}
+          </p>
+          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3" aria-hidden="true" />
+            {new Date(c.createdAt).toLocaleDateString()}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white border-b px-4 sm:px-6 py-4">
+      <div className="bg-card border border-border px-4 sm:px-6 py-4 rounded-xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <button type="button" onClick={goBack} className="p-2 hover:bg-gray-100 rounded-lg">
-              <ArrowLeft className="w-5 h-5" />
+            <button
+              type="button"
+              onClick={goBack}
+              aria-label="Go back"
+              className="p-2 hover:bg-muted rounded-lg text-muted-foreground"
+            >
+              <ArrowLeft className="w-5 h-5" aria-hidden="true" />
             </button>
             <button
               type="button"
               onClick={() => setIsListOpen(true)}
-              className="p-2 hover:bg-gray-100 rounded-lg md:hidden"
+              aria-label="Open consultations list"
+              className="p-2 hover:bg-muted rounded-lg text-muted-foreground md:hidden"
               title="Consultations"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-5 h-5" aria-hidden="true" />
             </button>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-semibold truncate">Vet AI Consultation</h1>
-              <p className="text-sm text-gray-500 truncate">{selectedFarm.name}</p>
+              <p className="text-sm text-muted-foreground truncate">{selectedFarm.name}</p>
             </div>
           </div>
-          <button
+          <Button
+            type="button"
             onClick={() => {
               setActiveConsultation(null);
               setShowNewConsultation(true);
               setIsListOpen(false);
             }}
-            className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 w-full sm:w-auto"
+            className="w-full gap-2 rounded-lg bg-green-600 text-white hover:bg-green-700 sm:w-auto"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" aria-hidden="true" />
             <span className="hidden sm:inline">New Consultation</span>
             <span className="sm:hidden">New</span>
-          </button>
+          </Button>
         </div>
       </div>
 
-      <div className="flex h-[calc(100dvh-130px)] md:h-[calc(100vh-130px)] min-h-0">
+      <div className="flex h-[calc(100dvh-17rem)] min-h-[16rem]">
         {/* Sidebar - Consultation List (desktop) */}
-        <div className="hidden md:block w-80 shrink-0 bg-white border-r overflow-y-auto">
-          <div className="p-4 border-b">
-            <h3 className="font-medium text-gray-700">Your Consultations</h3>
+        <div className="hidden md:block w-80 shrink-0 bg-card border-r border-border overflow-y-auto">
+          <div className="p-4 border-b border-border">
+            <h3 className="font-medium text-foreground">Your Consultations</h3>
           </div>
-          
-          {loadingConsultations ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-green-600" />
-            </div>
-          ) : consultations.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">No consultations yet</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {consultations.map(c => (
-                <button
-                  key={c._id}
-                  onClick={() => handleSelectConsultation(c._id)}
-                  className={`w-full p-4 text-left hover:bg-gray-50 ${
-                    activeConsultation === c._id ? 'bg-green-50 border-l-4 border-green-600' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-1">
-                    <span className="text-lg">
-                      {speciesOptions.find(s => s.value === c.species)?.emoji || '🐾'}
-                    </span>
-                    {getStatusBadge(c.status)}
-                  </div>
-                  <p className="font-medium text-sm truncate">
-                    {c.title || c.messages?.[0]?.content?.slice(0, 50) || 'New Consultation'}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                    <Clock className="w-3 h-3" />
-                    {new Date(c.createdAt).toLocaleDateString()}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+          {consultationList}
         </div>
 
         {/* Mobile Consultation List (drawer) */}
         {isListOpen && (
           <>
-            <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setIsListOpen(false)} />
-            <div className="fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-white md:hidden flex flex-col">
-              <div className="p-4 border-b flex items-center justify-between">
-                <h3 className="font-medium text-gray-700">Your Consultations</h3>
-                <button type="button" onClick={() => setIsListOpen(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-                  <X className="w-5 h-5" />
+            <div
+              className="fixed inset-0 z-40 bg-black/50 md:hidden"
+              onClick={() => setIsListOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              className="fixed inset-y-0 left-0 z-50 w-full max-w-sm bg-card border-r border-border md:hidden flex flex-col"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Your consultations"
+            >
+              <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+                <h3 className="font-medium text-foreground">Your Consultations</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsListOpen(false)}
+                  aria-label="Close consultations list"
+                  className="p-2 hover:bg-muted rounded-lg text-muted-foreground"
+                >
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
-
-              {loadingConsultations ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-green-600" />
-                </div>
-              ) : consultations.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <MessageCircle className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                  <p className="text-sm">No consultations yet</p>
-                </div>
-              ) : (
-                <div className="divide-y overflow-y-auto">
-                  {consultations.map(c => (
-                    <button
-                      key={c._id}
-                      onClick={() => handleSelectConsultation(c._id)}
-                      className={`w-full p-4 text-left hover:bg-gray-50 ${
-                        activeConsultation === c._id ? 'bg-green-50 border-l-4 border-green-600' : ''
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-1">
-                        <span className="text-lg">
-                          {speciesOptions.find(s => s.value === c.species)?.emoji || '🐾'}
-                        </span>
-                        {getStatusBadge(c.status)}
-                      </div>
-                      <p className="font-medium text-sm truncate">
-                        {c.title || c.messages?.[0]?.content?.slice(0, 50) || 'New Consultation'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                        <Clock className="w-3 h-3" />
-                        {new Date(c.createdAt).toLocaleDateString()}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="flex-1 min-h-0 overflow-y-auto">{consultationList}</div>
             </div>
           </>
         )}
@@ -352,19 +343,20 @@ export default function VetConsultationPage() {
         <div className="flex-1 flex flex-col min-w-0">
           {showNewConsultation ? (
             // New Consultation Form
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="w-full max-w-lg bg-white rounded-xl shadow-sm p-6">
+            <div className="flex-1 flex items-center justify-center p-4 sm:p-8">
+              <div className="w-full max-w-lg bg-card border border-border rounded-xl shadow-sm p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-4">Start New Consultation</h2>
-                
+
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="vet-species" className="block text-sm font-medium text-foreground mb-1">
                       Animal Type
                     </label>
                     <select
+                      id="vet-species"
                       value={newConsultationForm.species}
                       onChange={e => setNewConsultationForm(prev => ({ ...prev, species: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-border rounded-lg px-3 py-2 bg-background text-base"
                     >
                       {speciesOptions.map(s => (
                         <option key={s.value} value={s.value}>
@@ -375,13 +367,14 @@ export default function VetConsultationPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="vet-livestock" className="block text-sm font-medium text-foreground mb-1">
                       Specific Animal (Optional)
                     </label>
                     <select
+                      id="vet-livestock"
                       value={newConsultationForm.livestockId}
                       onChange={e => setNewConsultationForm(prev => ({ ...prev, livestockId: e.target.value }))}
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-border rounded-lg px-3 py-2 bg-background text-base"
                     >
                       <option value="">General question (no specific animal)</option>
                       {livestock
@@ -399,35 +392,35 @@ export default function VetConsultationPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label htmlFor="vet-message" className="block text-sm font-medium text-foreground mb-1">
                       Describe the issue or question
                     </label>
                     <textarea
+                      id="vet-message"
                       value={newConsultationForm.message}
                       onChange={e => setNewConsultationForm(prev => ({ ...prev, message: e.target.value }))}
                       rows={4}
                       placeholder="Example: My cow has been refusing to eat for 2 days and seems lethargic..."
-                      className="w-full border rounded-lg px-3 py-2"
+                      className="w-full border border-border rounded-lg px-3 py-2 bg-background text-base"
                     />
                   </div>
 
-                  <button
+                  {startConsultation.isError && (
+                    <div role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                      {startConsultation.error?.response?.data?.message || 'Could not start the consultation. Please try again.'}
+                    </div>
+                  )}
+
+                  <Button
+                    type="button"
                     onClick={handleStartConsultation}
-                    disabled={!newConsultationForm.message.trim() || startConsultation.isPending}
-                    className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                    disabled={!newConsultationForm.message.trim()}
+                    loading={startConsultation.isPending}
+                    className="w-full gap-2 rounded-lg bg-green-600 text-white hover:bg-green-700"
                   >
-                    {startConsultation.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Starting...
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle className="w-4 h-4" />
-                        Start Consultation
-                      </>
-                    )}
-                  </button>
+                    {!startConsultation.isPending && <MessageCircle className="w-4 h-4" aria-hidden="true" />}
+                    {startConsultation.isPending ? 'Starting...' : 'Start Consultation'}
+                  </Button>
                 </div>
               </div>
             </div>
@@ -435,31 +428,36 @@ export default function VetConsultationPage() {
             // Active Chat
             <>
               {/* Chat Header */}
-              <div className="bg-white border-b px-6 py-3">
+              <div className="bg-card border-b border-border px-4 sm:px-6 py-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-2xl" aria-hidden="true">
                       {speciesOptions.find(s => s.value === consultation.species)?.emoji}
                     </span>
-                    <div>
-                      <h3 className="font-medium">
+                    <div className="min-w-0">
+                      <h3 className="font-medium truncate">
                         {consultation.title || 'Consultation'}
                       </h3>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground truncate">
                         {consultation.livestock?.name || consultation.livestock?.tagId || 'General'}
                       </p>
                     </div>
                   </div>
-                  {getStatusBadge(consultation.status)}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {getStatusBadge(consultation.status)}
+                  </div>
                 </div>
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              <div
+                className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4"
+                role="log"
+                aria-live="polite"
+                aria-label="Consultation messages"
+              >
                 {loadingActive ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-green-600" />
-                  </div>
+                  <LoadingState label="Loading messages..." />
                 ) : (
                   consultation.messages?.map((msg, idx) => (
                     <div
@@ -467,10 +465,10 @@ export default function VetConsultationPage() {
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[85%] md:max-w-[70%] rounded-xl px-4 py-3 ${
+                        className={`min-w-0 max-w-[85%] md:max-w-[70%] rounded-xl px-4 py-3 ${
                           msg.role === 'user'
                             ? 'bg-green-600 text-white'
-                            : 'bg-white border shadow-sm'
+                            : 'bg-card border border-border shadow-sm'
                         }`}
                       >
                         {msg.imageUrls?.length > 0 && (
@@ -485,8 +483,8 @@ export default function VetConsultationPage() {
                             ))}
                           </div>
                         )}
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
-                        <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-green-100' : 'text-gray-400'}`}>
+                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                        <p className={`text-xs mt-1 ${msg.role === 'user' ? 'text-green-100' : 'text-muted-foreground'}`}>
                           {new Date(msg.timestamp).toLocaleTimeString()}
                         </p>
                       </div>
@@ -497,28 +495,36 @@ export default function VetConsultationPage() {
               </div>
 
               {/* Input Area */}
-              <div className="bg-white border-t p-4">
+              <div className="bg-card border-t border-border p-4">
                 {selectedImages.length > 0 && (
                   <div className="flex gap-2 mb-3 flex-wrap">
                     {selectedImages.map((file, idx) => (
-                      <div key={idx} className="relative">
+                      <div key={idx} className="relative group">
                         <img
                           src={URL.createObjectURL(file)}
                           alt="Selected"
                           className="w-16 h-16 object-cover rounded"
                         />
                         <button
+                          type="button"
                           onClick={() => removeImage(idx)}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5"
+                          aria-label={`Remove image ${idx + 1}`}
+                          className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 focus-visible:opacity-100"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3 h-3" aria-hidden="true" />
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
-                
-                <div className="flex items-end gap-3">
+
+                {sendMessage.isError && (
+                  <div role="alert" className="mb-3 rounded-lg bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+                    {sendMessage.error?.response?.data?.message || 'Failed to send your message. Please try again.'}
+                  </div>
+                )}
+
+                <div className="flex items-end gap-2 sm:gap-3">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -527,14 +533,18 @@ export default function VetConsultationPage() {
                     multiple
                     className="hidden"
                   />
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => fileInputRef.current?.click()}
-                    className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg"
+                    aria-label="Attach images"
                     title="Attach images"
+                    className="shrink-0 text-muted-foreground hover:text-foreground"
                   >
-                    <ImageIcon className="w-5 h-5" />
-                  </button>
-                  
+                    <ImageIcon className="w-5 h-5" aria-hidden="true" />
+                  </Button>
+
                   <textarea
                     value={newMessage}
                     onChange={e => setNewMessage(e.target.value)}
@@ -545,35 +555,33 @@ export default function VetConsultationPage() {
                       }
                     }}
                     placeholder="Type your message..."
+                    aria-label="Type your message"
                     rows={1}
-                    className="flex-1 border rounded-lg px-4 py-2 resize-none"
+                    className="min-w-0 flex-1 border border-border rounded-lg px-4 py-2 resize-none bg-background text-base"
                   />
-                  
-                  <button
+
+                  <Button
+                    type="button"
+                    size="icon"
                     onClick={handleSendMessage}
-                    disabled={!newMessage.trim() || sendMessage.isPending}
-                    className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
+                    aria-label="Send message"
+                    disabled={!newMessage.trim()}
+                    loading={sendMessage.isPending}
+                    className="shrink-0 rounded-lg bg-green-600 text-white hover:bg-green-700"
                   >
-                    {sendMessage.isPending ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Send className="w-5 h-5" />
-                    )}
-                  </button>
+                    {!sendMessage.isPending && <Send className="w-5 h-5" aria-hidden="true" />}
+                  </Button>
                 </div>
               </div>
             </>
           ) : (
             // Empty State
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-700">Select a consultation</h3>
-                <p className="text-gray-500 mt-1">
-                  Choose from the list or start a new one
-                </p>
-              </div>
-            </div>
+            <EmptyState
+              className="flex-1"
+              icon={<MessageCircle className="h-8 w-8" aria-hidden="true" />}
+              title="Select a consultation"
+              description="Choose from the list or start a new one"
+            />
           )}
         </div>
       </div>

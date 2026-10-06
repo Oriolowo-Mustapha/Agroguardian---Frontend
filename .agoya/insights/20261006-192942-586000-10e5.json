@@ -1,0 +1,16 @@
+{
+  "id": "20261006-192942-586000-10e5",
+  "ts": "2026-10-06T19:29:42.601Z",
+  "agent": "opencode",
+  "type": "insight",
+  "content": "AgroGuardian: src/components/ui/ModalShell.jsx focus/scroll effect has deps [open, onClose] — passing an inline arrow onClose makes focus jump to the close button on every re-render/keystroke. Always pass a stable handler (direct prop ref or useCallback). Escape is handled in capture phase with stopPropagation, so nested child modals (e.g. CompleteActivityModal z-[130] which has no Escape handler) can't get Escape while a ModalShell is open. ModalShell body padding p-4/sm:p-6/md:p-8 merges via cn/tailwind-merge; footer provides flex-col-reverse sm:flex-row.",
+  "tags": [
+    "agroguardian",
+    "modalshell",
+    "react",
+    "focus-trap",
+    "gotcha"
+  ],
+  "meta": {},
+  "importance": 0.956968703941729
+}

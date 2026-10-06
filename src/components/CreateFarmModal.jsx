@@ -1,9 +1,7 @@
 import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
-  X,
   Upload,
-  Loader2,
   MapPin,
   Info,
   Plus,
@@ -13,8 +11,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import api from '../lib/axios';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
+import ModalShell from './ui/ModalShell';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
 
 const SOIL_TYPES = ["clay", "sandy", "loamy", "silty", "peaty", "laterite", "clay-loam", "sandy-loam"];
 
@@ -173,65 +172,74 @@ const CreateFarmModal = ({ isOpen, onClose }) => {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-3xl w-full max-w-2xl my-auto shadow-2xl animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
-        <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center z-10 rounded-t-3xl">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-xl">
-              <Plus className="h-6 w-6 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">Add New Farm</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="h-6 w-6 text-gray-400" />
-          </button>
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      title="Add New Farm"
+      size="lg"
+      icon={
+        <div className="bg-primary/10 p-2 rounded-xl">
+          <Plus className="h-6 w-6 text-primary" aria-hidden="true" />
         </div>
-
-        <div className="overflow-y-auto flex-1">
-          <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-8">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-3">
-                <Info className="h-5 w-5 flex-shrink-0" />
-                {error}
-              </div>
-            )}
+      }
+      footer={
+        <>
+          <Button type="button" variant="outline" className="flex-1 rounded-xl h-12" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            onClick={handleSubmit(onSubmit)}
+            loading={isLoading}
+            className="flex-1 rounded-xl h-12 font-bold shadow-lg shadow-primary/20" 
+          >
+            {isLoading ? 'Registering...' : 'Register Farm'}
+          </Button>
+        </>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {error && (
+          <div role="alert" className="bg-destructive/10 text-destructive p-4 rounded-xl text-sm font-medium border border-destructive/20 flex items-center gap-3">
+            <Info className="h-5 w-5 shrink-0" aria-hidden="true" />
+            {error}
+          </div>
+        )}
 
             <div className="space-y-6">
               <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Basic Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Farm Name</label>
-                  <Input placeholder="e.g. Sunshine Acres" {...register('name')} className={errors.name ? 'border-red-500' : ''} />
-                  {errors.name && <p className="text-xs text-red-500 font-medium">{errors.name.message}</p>}
+                  <label className="text-sm font-bold text-foreground">Farm Name</label>
+                  <Input placeholder="e.g. Sunshine Acres" {...register('name')} className={errors.name ? 'border-destructive' : ''} />
+                  {errors.name && <p role="alert" className="text-xs text-destructive font-medium">{errors.name.message}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Established Date</label>
+                  <label className="text-sm font-bold text-foreground">Established Date</label>
                   <Input type="date" {...register('establishedDate')} />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Size</label>
+                  <label className="text-sm font-bold text-foreground">Size</label>
                   <div className="flex gap-2">
-                    <Input type="number" step="0.1" placeholder="50" {...register('size')} className={errors.size ? 'border-red-500' : ''} />
+                    <Input type="number" step="0.1" placeholder="50" {...register('size')} className={errors.size ? 'border-destructive' : ''} />
                     <select 
-                      className="bg-gray-50 border border-gray-200 rounded-lg px-3 text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
+                      className="shrink-0 h-11 bg-muted border border-border rounded-lg px-3 text-base sm:text-sm font-medium focus:ring-2 focus:ring-primary outline-none"
                       {...register('sizeUnit')}
                     >
                       <option value="acres">Acres</option>
                       <option value="hectares">Hectares</option>
                     </select>
                   </div>
-                  {errors.size && <p className="text-xs text-red-500 font-medium">{errors.size.message}</p>}
+                  {errors.size && <p role="alert" className="text-xs text-destructive font-medium">{errors.size.message}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Irrigation Type</label>
+                  <label className="text-sm font-bold text-foreground">Irrigation Type</label>
                   <select 
-                    className="w-full h-10 bg-white border border-input rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                    className="w-full h-11 bg-background border border-input rounded-md px-3 py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary outline-none"
                     {...register('irrigationType')}
                   >
                     {["drip", "sprinkler", "flood", "rainfed", "none"].map(type => (
@@ -243,58 +251,59 @@ const CreateFarmModal = ({ isOpen, onClose }) => {
             </div>
 
             <div className="space-y-4">
-              <label className="text-sm font-bold text-gray-700">Soil Types (Select all that apply)</label>
+              <label className="text-sm font-bold text-foreground">Soil Types (Select all that apply)</label>
               <div className="flex flex-wrap gap-2">
                 {SOIL_TYPES.map((type) => (
                   <button
                     key={type}
                     type="button"
                     onClick={() => toggleSoil(type)}
+                    aria-pressed={selectedSoils.includes(type)}
                     className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
                       selectedSoils.includes(type)
                         ? 'bg-primary text-white border-primary shadow-md'
-                        : 'bg-white text-gray-500 border-gray-200 hover:border-primary/50'
+                        : 'bg-card text-muted-foreground border-border hover:border-primary/50'
                     }`}
                   >
                     <div className="flex items-center gap-1.5">
-                      {selectedSoils.includes(type) && <Check className="h-3 w-3" />}
+                      {selectedSoils.includes(type) && <Check className="h-3 w-3" aria-hidden="true" />}
                       {type.replace('-', ' ').toUpperCase()}
                     </div>
                   </button>
                 ))}
               </div>
-              {errors.soilType && <p className="text-xs text-red-500 font-medium">{errors.soilType.message}</p>}
+              {errors.soilType && <p role="alert" className="text-xs text-destructive font-medium">{errors.soilType.message}</p>}
             </div>
 
             <div className="space-y-6">
               <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Location Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2 space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Address</label>
-                  <Input placeholder="Street name, landmark..." {...register('location.address')} className={errors.location?.address ? 'border-red-500' : ''} />
-                  {errors.location?.address && <p className="text-xs text-red-500 font-medium">{errors.location.address.message}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="sm:col-span-2 space-y-2">
+                  <label className="text-sm font-bold text-foreground">Address</label>
+                  <Input placeholder="Street name, landmark..." {...register('location.address')} className={errors.location?.address ? 'border-destructive' : ''} />
+                  {errors.location?.address && <p role="alert" className="text-xs text-destructive font-medium">{errors.location.address.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">City</label>
-                  <Input placeholder="Lagos" {...register('location.city')} className={errors.location?.city ? 'border-red-500' : ''} />
-                  {errors.location?.city && <p className="text-xs text-red-500 font-medium">{errors.location.city.message}</p>}
+                  <label className="text-sm font-bold text-foreground">City</label>
+                  <Input placeholder="Lagos" {...register('location.city')} className={errors.location?.city ? 'border-destructive' : ''} />
+                  {errors.location?.city && <p role="alert" className="text-xs text-destructive font-medium">{errors.location.city.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">State/Province</label>
-                  <Input placeholder="Lagos State" {...register('location.state')} className={errors.location?.state ? 'border-red-500' : ''} />
-                  {errors.location?.state && <p className="text-xs text-red-500 font-medium">{errors.location.state.message}</p>}
+                  <label className="text-sm font-bold text-foreground">State/Province</label>
+                  <Input placeholder="Lagos State" {...register('location.state')} className={errors.location?.state ? 'border-destructive' : ''} />
+                  {errors.location?.state && <p role="alert" className="text-xs text-destructive font-medium">{errors.location.state.message}</p>}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-gray-700">Country</label>
-                  <Input placeholder="Nigeria" {...register('location.country')} className={errors.location?.country ? 'border-red-500' : ''} />
-                  {errors.location?.country && <p className="text-xs text-red-500 font-medium">{errors.location.country.message}</p>}
+                  <label className="text-sm font-bold text-foreground">Country</label>
+                  <Input placeholder="Nigeria" {...register('location.country')} className={errors.location?.country ? 'border-destructive' : ''} />
+                  {errors.location?.country && <p role="alert" className="text-xs text-destructive font-medium">{errors.location.country.message}</p>}
                 </div>
               </div>
               
               <div className="bg-blue-50/50 p-4 rounded-2xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-blue-700 font-bold text-sm">
-                    <MapPin className="h-4 w-4" />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2 text-blue-700 font-bold text-sm">
+                    <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
                     Coordinates (Recommended for precision)
                   </div>
                   <Button 
@@ -302,25 +311,21 @@ const CreateFarmModal = ({ isOpen, onClose }) => {
                     variant="ghost" 
                     size="sm" 
                     onClick={handleGetLocation}
-                    disabled={isDetectingLocation}
+                    loading={isDetectingLocation}
                     className="text-blue-600 hover:text-blue-700 hover:bg-blue-100/50 h-8 px-2"
                   >
-                    {isDetectingLocation ? (
-                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                    ) : (
-                      <Plus className="h-3 w-3 mr-1" />
-                    )}
+                    {!isDetectingLocation && <Plus className="h-3 w-3 mr-1" aria-hidden="true" />}
                     {isDetectingLocation ? 'Detecting...' : 'Refresh Location'}
                   </Button>
                 </div>
 
                 {locationError && (
-                  <p className="text-[10px] text-amber-600 font-medium bg-amber-50 p-2 rounded-lg border border-amber-100">
+                  <p role="alert" className="text-[10px] text-amber-600 font-medium bg-amber-50 p-2 rounded-lg border border-amber-100">
                     {locationError}. You can enter coordinates manually.
                   </p>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-blue-600 uppercase">Latitude</label>
                     <Input 
@@ -348,23 +353,32 @@ const CreateFarmModal = ({ isOpen, onClose }) => {
             <div className="space-y-6">
               <h3 className="text-sm font-bold text-primary uppercase tracking-wider">Media & Description</h3>
               <div 
-                className="relative h-48 rounded-2xl border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors bg-gray-50 flex flex-col items-center justify-center cursor-pointer overflow-hidden group"
+                role="button"
+                tabIndex={0}
+                aria-label="Upload farm photo"
+                className="relative h-48 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted flex flex-col items-center justify-center cursor-pointer overflow-hidden group"
                 onClick={() => document.getElementById('farm-image-v3').click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    document.getElementById('farm-image-v3').click();
+                  }
+                }}
               >
                 {previewUrl ? (
                   <>
                     <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                       <p className="text-white font-bold">Change Image</p>
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="bg-white p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
-                      <Upload className="h-6 w-6 text-primary" />
+                    <div className="bg-card p-3 rounded-full shadow-sm mb-2 group-hover:scale-110 transition-transform">
+                      <Upload className="h-6 w-6 text-primary" aria-hidden="true" />
                     </div>
-                    <p className="text-sm text-gray-500 font-medium">Click to upload farm photo</p>
-                    <p className="text-xs text-gray-400 mt-1 text-center px-4">Highly recommended for visual identification</p>
+                    <p className="text-sm text-muted-foreground font-medium">Click to upload farm photo</p>
+                    <p className="text-xs text-muted-foreground mt-1 text-center px-4">Highly recommended for visual identification</p>
                   </>
                 )}
                 <input 
@@ -376,38 +390,17 @@ const CreateFarmModal = ({ isOpen, onClose }) => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-gray-700">Description</label>
+                <label className="text-sm font-bold text-foreground">Description</label>
                 <textarea 
-                  className="w-full min-h-[100px] bg-white border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                  className="w-full min-h-[100px] bg-background border border-border rounded-lg p-3 text-base sm:text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                   placeholder="Share any additional details about your farm's history or special practices..."
                   {...register('description')}
                 />
-                {errors.description && <p className="text-xs text-red-500 font-medium">{errors.description.message}</p>}
+                {errors.description && <p role="alert" className="text-xs text-destructive font-medium">{errors.description.message}</p>}
               </div>
             </div>
-          </form>
-        </div>
-
-        <div className="p-8 border-t border-gray-100 flex gap-4 bg-gray-50/50 rounded-b-3xl">
-          <Button type="button" variant="outline" className="flex-1 rounded-xl h-12" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            onClick={handleSubmit(onSubmit)}
-            className="flex-1 rounded-xl h-12 font-bold shadow-lg shadow-primary/20" 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="animate-spin mr-2 h-5 w-5" />
-                Registering...
-              </>
-            ) : 'Register Farm'}
-          </Button>
-        </div>
-      </div>
-    </div>
+      </form>
+    </ModalShell>
   );
 };
 
